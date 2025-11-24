@@ -1,0 +1,54 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+
+# Virtual environment
+venv/
+env/
+.venv/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Pipenv / Poetry
+Pipfile.lock
+poetry.lock
+
+# --- Flask / App ---
+instance/
+*.db
+*.sqlite3
+*.sqlite
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# IDE / Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Mac / Windows / Linux system files
+.DS_Store
+Thumbs.db
+
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Byte-compiled / cache
+.cache/
+.mypy_cache/
