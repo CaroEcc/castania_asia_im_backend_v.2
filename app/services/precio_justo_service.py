@@ -61,40 +61,86 @@ class PrecioJustoService:
     def calcular_p_prom_planta_castana(self) -> Decimal:
         """
         Calcula P_Prom_Planta_C: Precio Promedio Ponderado de Castaña en Planta
-        Usa reportes P9 (precio_intermediario_castana) donde nodo_precio == "En planta procesadora"
+        NORMALIZADO a Bs/kg para comparar correctamente entre diferentes unidades
+        Usa reportes P9 (precio_intermediario_castana)
         """
-        resultado = self.db.query(
-            func.avg(Reporte.precio_intermediario_castana)
-        ).scalar()
-
-        """resultado = self.db.query(
-            func.avg(Reporte.precio_intermediario_castana)
+        reportes = self.db.query(
+            Reporte.precio_intermediario_castana,
+            Reporte.unidad_intermediario_castana
         ).filter(
             Reporte.precio_intermediario_castana.isnot(None),
-            Reporte.nodo_precio == "En planta procesadora"
-        ).scalar()"""
+            Reporte.unidad_intermediario_castana.isnot(None)
+        ).all()
 
-        return Decimal(str(resultado)) if resultado else Decimal("0")
+        if not reportes:
+            logger.warning("No hay reportes de precio intermediario de castaña para calcular promedio")
+            return Decimal("0")
+
+        precios_normalizados = []
+
+        for precio, unidad in reportes:
+            precio_decimal = Decimal(str(precio))
+
+            # Normalizar a Bs/kg según la unidad reportada
+            if self.UNIDAD_CATANIA_CAJA in unidad.lower():
+                precio_por_kg = precio_decimal / self.VALOR_UNIDAD_CATANIA_CAJA
+            elif self.UNIDAD_CATANIA_BARRICA in unidad.lower():
+                precio_por_kg = precio_decimal / self.VALOR_UNIDAD_CATANIA_BARRICA
+            elif self.UNIDAD_CATANIA_KG in unidad.lower():
+                precio_por_kg = precio_decimal
+            else:
+                logger.warning(f"Unidad desconocida para castaña: '{unidad}'. Ignorando este reporte.")
+                continue  # Ignorar unidades desconocidas
+
+            precios_normalizados.append(precio_por_kg)
+
+        if not precios_normalizados:
+            logger.warning("No se pudieron normalizar precios de castaña")
+            return Decimal("0")
+
+        promedio = sum(precios_normalizados) / len(precios_normalizados)
+        logger.debug(f"Precio promedio planta castaña (normalizado a Bs/kg): {promedio} (de {len(precios_normalizados)} reportes)")
+        return promedio
 
     def calcular_p_prom_planta_asai(self) -> Decimal:
         """
         Calcula P_Prom_Planta_A: Precio Promedio Ponderado de Asaí en Planta
-        Usa reportes P11 (precio_intermediario_asai) donde nodo_precio == "En planta procesadora"
+        NORMALIZADO a Bs/lata para comparar correctamente entre diferentes unidades
+        Usa reportes P11 (precio_intermediario_asai)
         """
-        resultado = self.db.query(
-            func.avg(Reporte.precio_intermediario_asai)
-        ).scalar()
+        reportes = self.db.query(
+            Reporte.precio_intermediario_asai,
+            Reporte.unidad_intermediario_asai
+        ).filter(
+            Reporte.precio_intermediario_asai.isnot(None),
+            Reporte.unidad_intermediario_asai.isnot(None)
+        ).all()
 
-        """
-        resultado = self.db.query(
-                    func.avg(Reporte.precio_intermediario_asai)
-                ).filter(
-                    Reporte.precio_intermediario_asai.isnot(None),
-                    Reporte.nodo_precio == "En planta procesadora"
-                ).scalar()
-        """
+        if not reportes:
+            logger.warning("No hay reportes de precio intermediario de asaí para calcular promedio")
+            return Decimal("0")
 
-        return Decimal(str(resultado)) if resultado else Decimal("0")
+        precios_normalizados = []
+
+        for precio, unidad in reportes:
+            precio_decimal = Decimal(str(precio))
+
+            # Normalizar a Bs/lata según la unidad reportada
+            if self.UNIDAD_ASAI_LATA in unidad.lower():
+                precio_por_lata = precio_decimal
+            else:
+                logger.warning(f"Unidad desconocida para asaí: '{unidad}'. Ignorando este reporte.")
+                continue  # Ignorar unidades desconocidas
+
+            precios_normalizados.append(precio_por_lata)
+
+        if not precios_normalizados:
+            logger.warning("No se pudieron normalizar precios de asaí")
+            return Decimal("0")
+
+        promedio = sum(precios_normalizados) / len(precios_normalizados)
+        logger.debug(f"Precio promedio planta asaí (normalizado a Bs/lata): {promedio} (de {len(precios_normalizados)} reportes)")
+        return promedio
 
     def calcular_p_min_obs_castana_zona(self, zona: str) -> Decimal:
         """
@@ -177,11 +223,25 @@ class PrecioJustoService:
         logger.debug("Iniciando cálculo de precio justo de castaña")
         logger.debug(f"Inputs recibidos: costo_transporte={costo_transporte}, "
                  f"tipo_castana='{tipo_castana}', tiempo_recoleccion={tiempo_recoleccion}, "
-                 f"tiempo_venta={tiempo_venta}, zona='{zona}'")
+                 f"tiempo_venta={tiempo_venta}, unidad='{unidad}', zona='{zona}'")
 
         # 1. P_Base_Ajustado_C = P_Prom_Planta_C - Costo_Transporte
-        p_prom_planta_c = self.calcular_p_prom_planta_castana()
-        logger.debug(f"Precio promedio planta (p_prom_planta_c): {p_prom_planta_c}")
+        # p_prom_planta_c viene en Bs/kg (normalizado), convertir a la unidad del usuario
+        p_prom_planta_c_por_kg = self.calcular_p_prom_planta_castana()
+        logger.debug(f"Precio promedio planta (Bs/kg): {p_prom_planta_c_por_kg}")
+
+        # Convertir el precio promedio a la unidad del usuario
+        if unidad == self.UNIDAD_CATANIA_CAJA:
+            p_prom_planta_c = p_prom_planta_c_por_kg * self.VALOR_UNIDAD_CATANIA_CAJA
+        elif unidad == self.UNIDAD_CATANIA_BARRICA:
+            p_prom_planta_c = p_prom_planta_c_por_kg * self.VALOR_UNIDAD_CATANIA_BARRICA
+        elif unidad == self.UNIDAD_CATANIA_KG:
+            p_prom_planta_c = p_prom_planta_c_por_kg
+        else:
+            logger.warning(f"Unidad desconocida: '{unidad}'. Usando Bs/kg por defecto.")
+            p_prom_planta_c = p_prom_planta_c_por_kg
+
+        logger.debug(f"Precio promedio planta en unidad '{unidad}': {p_prom_planta_c}")
 
         costo_transporte_c = costo_transporte or Decimal("0")
         p_base_ajustado_c = p_prom_planta_c - costo_transporte_c
@@ -272,8 +332,21 @@ class PrecioJustoService:
         Returns:
             Dict con 'precio_justo' y 'precio_minimo_zona'
         """
+        logger.debug("Iniciando cálculo de precio justo de asaí")
+        logger.debug(f"Inputs recibidos: costo_transporte={costo_transporte}, "
+                 f"tipo_asai='{tipo_asai}', horas_desde_cosecha={horas_desde_cosecha}, "
+                 f"unidad='{unidad}', zona='{zona}'")
+
         # 1. P_Base_Ajustado_A = P_Prom_Planta_A - Costo_Transporte
+        # p_prom_planta_a viene en Bs/lata (normalizado), ya está en la unidad correcta
         p_prom_planta_a = self.calcular_p_prom_planta_asai()
+        logger.debug(f"Precio promedio planta (Bs/lata): {p_prom_planta_a}")
+
+        # Para asaí, la unidad estándar es lata, por lo que no necesitamos conversión
+        # pero verificamos por consistencia
+        if unidad and "lata" not in unidad.lower():
+            logger.warning(f"Unidad no estándar para asaí: '{unidad}'. Se esperaba 'lata'.")
+
         costo_transporte_a = costo_transporte or Decimal("0")
         p_base_ajustado_a = p_prom_planta_a - costo_transporte_a
 
