@@ -6,11 +6,11 @@ from app.models import Comunidad
 
 # Lista de comunidades de la región amazónica boliviana
 COMUNIDADES_INICIALES = [
-    {"nombre": "Trinchera", "abreviacion": "TR", "status": "Activa"},
-    {"nombre": "Villa Florida", "abreviacion": "VF", "status": "Activa"},
-    {"nombre": "Puerto Oro", "abreviacion": "PR", "status": "Activa"},
-    {"nombre": "Jerico", "abreviacion": "JE", "status": "Activa"},
-    {"nombre": "Chive", "abreviacion": "CH", "status": "Activa"},
+    {"nombre": "Trinchera", "abreviacion": "TR", "status": "1"},
+    {"nombre": "Villa Florida", "abreviacion": "VF", "status": "1"},
+    {"nombre": "Puerto Oro", "abreviacion": "PR", "status": "1"},
+    {"nombre": "Jerico", "abreviacion": "JE", "status": "1"},
+    {"nombre": "Chive", "abreviacion": "CH", "status": "1"},
 ]
 
 def seed_comunidades():
