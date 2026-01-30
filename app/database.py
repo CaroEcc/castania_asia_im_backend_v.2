@@ -12,7 +12,10 @@ DB_URL = os.getenv("DATABASE_URL", "postgresql://caroecc:64pLPUFuUADlQqfXM20GLNT
 if DB_URL and "psycopg2" not in DB_URL:
     DB_URL = DB_URL.replace("postgresql://", "postgresql+psycopg2://")
 
-engine = create_engine(DB_URL)
+engine = create_engine(
+    DB_URL,
+    connect_args={"sslmode": "require"}
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
