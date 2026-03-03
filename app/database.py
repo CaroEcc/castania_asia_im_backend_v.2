@@ -14,7 +14,12 @@ if DB_URL and "psycopg2" not in DB_URL:
 
 engine = create_engine(
     DB_URL,
-    connect_args={"sslmode": "require"}
+    connect_args={
+        "sslmode": "require",
+        "connect_timeout": 10
+    },
+    pool_pre_ping=True,
+    pool_recycle=300
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
