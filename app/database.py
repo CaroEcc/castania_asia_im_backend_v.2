@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DB_URL = os.getenv("DATABASE_URL", "postgresql://caroecc:64pLPUFuUADlQqfXM20GLNTzb5so7CAC@dpg-d47ts3qli9vc738ve0o0-a.oregon-postgres.render.com/im_asai_castania")
+DB_URL = os.getenv("DATABASE_URL")
 
 # OBLIGATORIO: agregar +psycopg2 para SQLAlchemy
 if DB_URL and "psycopg2" not in DB_URL:
