@@ -348,7 +348,7 @@ class PrecioJustoService:
             logger.warning(f"Unidad no estándar para asaí: '{unidad}'. Se esperaba 'lata'.")
 
         costo_transporte_a = costo_transporte or Decimal("0")
-        p_base_ajustado_a = p_prom_planta_a - costo_transporte_a
+        p_base_ajustado_a = p_prom_planta_a + costo_transporte_a
 
         # 2. Bono_Frescura_A (según horas desde cosecha)
         bono_frescura_a = Decimal("0")
