@@ -25,11 +25,11 @@ class PrecioJustoService:
     PARAM_PENALIDAD_DIA_C_BS = Decimal("0.5")  # Bs penalidad por día sobre umbral
 
     # ASAÍ
-    PARAM_BONO_ORGANICO_A_BS = Decimal("0")  # Bs por certificación orgánica asaí
-    PARAM_BONO_COMERCIO_JUSTO_A_BS = Decimal("0")  # Bs por certificación comercio justo asaí
-    PARAM_BONO_ASAI_FR94_BS = Decimal("10.0")  # Bono frescura < 24h (FR 94)
-    PARAM_BONO_ASAI_FR90_BS = Decimal("7.0")   # Bono frescura 24-48h (FR 90)
-    PARAM_BONO_ASAI_FR85_BS = Decimal("3.0")   # Bono frescura 48-72h (FR 85)
+    PARAM_BONO_ORGANICO_A_BS = Decimal("0.0")  # Bs por certificación orgánica asaí
+    PARAM_BONO_COMERCIO_JUSTO_A_BS = Decimal("0.0")  # Bs por certificación comercio justo asaí
+    PARAM_BONO_ASAI_FR94_BS = Decimal("0.0")  # Bono frescura < 24h (FR 94)
+    PARAM_BONO_ASAI_FR90_BS = Decimal("0.0")   # Bono frescura 24-48h (FR 90)
+    PARAM_BONO_ASAI_FR85_BS = Decimal("0.0")   # Bono frescura 48-72h (FR 85)
 
     VAR_CALIDAD_TIPO_ORGANICO = "Organico"
     VAR_CALIDAD_TIPO_CONVENCIONAL = "Convencional"
