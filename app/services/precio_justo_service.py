@@ -106,18 +106,18 @@ class PrecioJustoService:
         """
         Calcula P_Prom_Planta_A: Precio Promedio Ponderado de Asaí en Planta
         NORMALIZADO a Bs/lata para comparar correctamente entre diferentes unidades
-        Usa reportes P11 (precio_intermediario_asai)
+        Usa reportes P11 (precio_cosechador_asai)
         """
         reportes = self.db.query(
-            Reporte.precio_intermediario_asai,
-            Reporte.unidad_intermediario_asai
+            Reporte.precio_cosechador_asai,
+            Reporte.unidad_cosechador_asai
         ).filter(
-            Reporte.precio_intermediario_asai.isnot(None),
-            Reporte.unidad_intermediario_asai.isnot(None)
+            Reporte.precio_cosechador_asai.isnot(None),
+            Reporte.unidad_cosechador_asai.isnot(None)
         ).all()
 
         if not reportes:
-            logger.warning("No hay reportes de precio intermediario de asaí para calcular promedio")
+            logger.warning("No hay reportes de precio cosechador de asaí para calcular promedio")
             return Decimal("0")
 
         precios_normalizados = []
