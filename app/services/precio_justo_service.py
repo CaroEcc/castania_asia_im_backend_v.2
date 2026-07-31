@@ -25,8 +25,8 @@ class PrecioJustoService:
     PARAM_PENALIDAD_DIA_C_BS = Decimal("0.5")  # Bs penalidad por día sobre umbral
 
     # ASAÍ
-    PARAM_BONO_ORGANICO_A_BS = Decimal("5.0")  # Bs por certificación orgánica asaí
-    PARAM_BONO_COMERCIO_JUSTO_A_BS = Decimal("0.36")  # Bs por certificación comercio justo asaí
+    PARAM_BONO_ORGANICO_A_BS = Decimal("0")  # Bs por certificación orgánica asaí
+    PARAM_BONO_COMERCIO_JUSTO_A_BS = Decimal("0")  # Bs por certificación comercio justo asaí
     PARAM_BONO_ASAI_FR94_BS = Decimal("10.0")  # Bono frescura < 24h (FR 94)
     PARAM_BONO_ASAI_FR90_BS = Decimal("7.0")   # Bono frescura 24-48h (FR 90)
     PARAM_BONO_ASAI_FR85_BS = Decimal("3.0")   # Bono frescura 48-72h (FR 85)
@@ -362,26 +362,26 @@ class PrecioJustoService:
 
         # 3. Bono_Certificacion_A
         bono_certificacion_a = Decimal("0")
-        if tipo_asai and self.VAR_CALIDAD_TIPO_ORGANICO.lower() in tipo_asai.lower():
-            match unidad:
-                case self.UNIDAD_ASAI_LATA:
-                    bono_certificacion_a = self.VALOR_UNIDAD_ASAI_LATA * (((self.TIPO_CAMBIO_USD_BS * self.PARAM_BONO_ORGANICO_A_BS)*1)/self.UNIDAD_BONO_ORGANICO)
-                case _:
-                    bono_certificacion_a = Decimal("0")
-
-        if tipo_asai and self.VAR_CALIDAD_TIPO_COMERCIO_JUSTO.lower() in tipo_asai.lower():
-            match unidad:
-                case self.UNIDAD_ASAI_LATA:
-                    bono_certificacion_a = self.VALOR_UNIDAD_ASAI_LATA * (((self.TIPO_CAMBIO_USD_BS * self.PARAM_BONO_COMERCIO_JUSTO_A_BS)*1)/self.UNIDAD_BONO_ORGANICO)
-                case _:
-                    bono_certificacion_a = Decimal("0")
-
         if tipo_asai and self.VAR_CALIDAD_TIPO_ORGANICO_COMERCIO_JUSTO.lower() in tipo_asai.lower():
             match unidad:
                 case self.UNIDAD_ASAI_LATA:
                     bono_organico = self.VALOR_UNIDAD_ASAI_LATA * (((self.TIPO_CAMBIO_USD_BS * self.PARAM_BONO_ORGANICO_A_BS)*1)/self.UNIDAD_BONO_ORGANICO)
                     bono_comercio_justo = self.VALOR_UNIDAD_ASAI_LATA * (((self.TIPO_CAMBIO_USD_BS * self.PARAM_BONO_COMERCIO_JUSTO_A_BS)*1)/self.UNIDAD_BONO_ORGANICO)
                     bono_certificacion_a = bono_organico + bono_comercio_justo
+                case _:
+                    bono_certificacion_a = Decimal("0")
+
+        elif tipo_asai and self.VAR_CALIDAD_TIPO_ORGANICO.lower() in tipo_asai.lower():
+            match unidad:
+                case self.UNIDAD_ASAI_LATA:
+                    bono_certificacion_a = self.VALOR_UNIDAD_ASAI_LATA * (((self.TIPO_CAMBIO_USD_BS * self.PARAM_BONO_ORGANICO_A_BS)*1)/self.UNIDAD_BONO_ORGANICO)
+                case _:
+                    bono_certificacion_a = Decimal("0")
+
+        elif tipo_asai and self.VAR_CALIDAD_TIPO_COMERCIO_JUSTO.lower() in tipo_asai.lower():
+            match unidad:
+                case self.UNIDAD_ASAI_LATA:
+                    bono_certificacion_a = self.VALOR_UNIDAD_ASAI_LATA * (((self.TIPO_CAMBIO_USD_BS * self.PARAM_BONO_COMERCIO_JUSTO_A_BS)*1)/self.UNIDAD_BONO_ORGANICO)
                 case _:
                     bono_certificacion_a = Decimal("0")
 
