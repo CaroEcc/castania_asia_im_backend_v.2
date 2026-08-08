@@ -3,7 +3,7 @@
 Servicio para calcular el Precio Justo según las fórmulas del documento formula_aplicar.md
 """
 import logging
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional, Dict
 from sqlalchemy.orm import Session
 from sqlalchemy import func
@@ -301,8 +301,9 @@ class PrecioJustoService:
         # Precio mínimo observado en la zona
         #p_min_obs_c_zona = self.calcular_p_min_obs_castana_zona(zona)
 
+        precio_justo_c = max(pj_castana, Decimal("0")).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
         return {
-            "precio_justo": max(pj_castana, Decimal("0")),  # No puede ser negativo
+            "precio_justo": precio_justo_c,  # No puede ser negativo
             #"precio_minimo_zona": p_min_obs_c_zona,
             "detalles": {
                 "p_base_ajustado": p_base_ajustado_c,
@@ -393,8 +394,9 @@ class PrecioJustoService:
         # Precio mínimo observado en la zona
         #p_min_obs_a_zona = self.calcular_p_min_obs_asai_zona(zona)
 
+        precio_justo_a = max(pj_asai, Decimal("0")).quantize(Decimal("1"), rounding=ROUND_HALF_UP)
         return {
-            "precio_justo": max(pj_asai, Decimal("0")),  # No puede ser negativo
+            "precio_justo": precio_justo_a,  # No puede ser negativo
             "detalles": {
                 "p_base_ajustado": p_base_ajustado_a,
                 "bono_frescura": bono_frescura_a,
