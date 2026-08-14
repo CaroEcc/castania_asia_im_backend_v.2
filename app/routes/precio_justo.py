@@ -5,7 +5,7 @@ Endpoint para calcular el Precio Justo basado en los datos del formulario
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import schemas
-from app.database import get_db
+from app.core.deps import get_db
 from app.services.precio_justo_service import PrecioJustoService
 from datetime import datetime
 import logging

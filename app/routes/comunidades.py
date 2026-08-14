@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
 from app import schemas
-from app.database import get_db
+from app.core.deps import get_db
 from app.models import Comunidad
 
 router = APIRouter(prefix="/comunidades", tags=["Comunidades"])

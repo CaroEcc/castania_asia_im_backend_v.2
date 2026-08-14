@@ -2,7 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app import models, schemas
-from app.database import get_db
+from app.core.deps import get_db
 from datetime import date
 
 router = APIRouter(prefix="/reportes", tags=["Reportes"])
