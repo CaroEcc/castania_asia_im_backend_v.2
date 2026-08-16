@@ -283,3 +283,98 @@ class RolOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# =============================================================================
+# SCHEMAS — MÓDULO 1: RECOLECTORES (Área A)
+# =============================================================================
+
+import uuid
+from datetime import date, time
+
+
+class RecolectorCreate(BaseModel):
+    codigo: str = Field(..., min_length=1, max_length=20, description="Código del recolector, ej: VF-GGS")
+    nombre_completo: str = Field(..., min_length=1, max_length=200)
+    ci: str = Field(..., min_length=1, max_length=20)
+    comunidad_id: int
+    fecha_registro: date
+    credencial: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$", description="PIN inicial de 6 dígitos numéricos")
+    documento_tenencia: Optional[str] = Field(None, description="ej: PGIBT N° 123-2024")
+    codigo_tc: Optional[str] = Field(None, description="N° TC del productor, ej: BO-BIO-6088")
+    especie: Optional[str] = None
+
+
+class RecolectorUpdate(BaseModel):
+    nombre_completo: Optional[str] = Field(None, min_length=1, max_length=200)
+    ci: Optional[str] = Field(None, min_length=1, max_length=20)
+    documento_tenencia: Optional[str] = None
+    codigo_tc: Optional[str] = None
+    especie: Optional[str] = None
+    estado: Optional[str] = Field(None, description="activo | inactivo")
+
+
+class RecolectorOut(BaseModel):
+    id: int
+    codigo: str
+    nombre_completo: str
+    ci: str
+    comunidad_id: int
+    documento_tenencia: Optional[str]
+    codigo_tc: Optional[str]
+    especie: Optional[str]
+    fecha_registro: date
+    estado: str
+    usuario_id: uuid.UUID
+
+    class Config:
+        from_attributes = True
+
+
+class RecolectorListResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    recolectores: List[RecolectorOut]
+
+
+class EntregaRecolectorCreate(BaseModel):
+    peso_kg: Decimal = Field(..., gt=0)
+    fecha_recoleccion: Optional[date] = None
+    fecha_entrega: Optional[date] = None
+    tipo_envase: Optional[str] = Field(None, description="Saco, Tina, etc.")
+    hora_cosecha: Optional[time] = None
+    hora_recepcion: Optional[time] = None
+    medio_transporte: Optional[str] = Field(None, description="fluvial | terrestre")
+    estado_recepcion: Optional[str] = Field(None, description="aceptado | rechazado")
+    firma_recolector: bool = False
+    firma_responsable_acopio: bool = False
+    observaciones: Optional[str] = None
+    lote_materia_prima_id: Optional[int] = None
+
+
+class EntregaRecolectorOut(BaseModel):
+    id: int
+    numero_entrega: Optional[str]
+    recolector_id: int
+    lote_materia_prima_id: Optional[int]
+    peso_kg: Decimal
+    fecha_recoleccion: Optional[date]
+    fecha_entrega: Optional[date]
+    tipo_envase: Optional[str]
+    hora_cosecha: Optional[time]
+    hora_recepcion: Optional[time]
+    medio_transporte: Optional[str]
+    estado_recepcion: Optional[str]
+    firma_recolector: bool
+    firma_responsable_acopio: bool
+    observaciones: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class EntregaListResponse(BaseModel):
+    total: int
+    recolector_id: int
+    entregas: List[EntregaRecolectorOut]
