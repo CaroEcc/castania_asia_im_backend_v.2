@@ -340,24 +340,22 @@ class RecolectorListResponse(BaseModel):
 
 class EntregaRecolectorCreate(BaseModel):
     peso_kg: Decimal = Field(..., gt=0)
+    parcela_id: Optional[int] = None
     fecha_recoleccion: Optional[date] = None
     fecha_entrega: Optional[date] = None
     tipo_envase: Optional[str] = Field(None, description="Saco, Tina, etc.")
     hora_cosecha: Optional[time] = None
     hora_recepcion: Optional[time] = None
     medio_transporte: Optional[str] = Field(None, description="fluvial | terrestre")
-    estado_recepcion: Optional[str] = Field(None, description="aceptado | rechazado")
     firma_recolector: bool = False
-    firma_responsable_acopio: bool = False
     observaciones: Optional[str] = None
-    lote_materia_prima_id: Optional[int] = None
 
 
 class EntregaRecolectorOut(BaseModel):
     id: int
     numero_entrega: Optional[str]
     recolector_id: int
-    lote_materia_prima_id: Optional[int]
+    parcela_id: Optional[int]
     peso_kg: Decimal
     fecha_recoleccion: Optional[date]
     fecha_entrega: Optional[date]
@@ -372,6 +370,46 @@ class EntregaRecolectorOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# =============================================================================
+# SCHEMAS — MÓDULO 1: PARCELAS
+# =============================================================================
+
+class ParcelaCreate(BaseModel):
+    codigo: Optional[str] = Field(None, max_length=50)
+    poligono_gps: Optional[dict] = Field(None, description="GeoJSON Polygon dibujado en app móvil")
+    superficie_ha: Optional[Decimal] = Field(None, description="Ingresada manualmente si no hay polígono")
+    especie: Optional[str] = Field(None, max_length=100)
+    produccion_estimada_kg: Optional[Decimal] = Field(None, gt=0)
+
+
+class ParcelaUpdate(BaseModel):
+    codigo: Optional[str] = Field(None, max_length=50)
+    poligono_gps: Optional[dict] = None
+    superficie_ha: Optional[Decimal] = None
+    especie: Optional[str] = Field(None, max_length=100)
+    produccion_estimada_kg: Optional[Decimal] = Field(None, gt=0)
+    estado: Optional[str] = Field(None, description="activa | inactiva")
+
+
+class ParcelaOut(BaseModel):
+    id: int
+    recolector_id: int
+    codigo: Optional[str]
+    poligono_gps: Optional[dict]
+    superficie_ha: Optional[Decimal]
+    especie: Optional[str]
+    produccion_estimada_kg: Optional[Decimal]
+    estado: str
+
+    class Config:
+        from_attributes = True
+
+
+class ParcelaListResponse(BaseModel):
+    total: int
+    parcelas: List[ParcelaOut]
 
 
 class EntregaListResponse(BaseModel):

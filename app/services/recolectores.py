@@ -175,11 +175,6 @@ class RecolectorService:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail=f"medio_transporte debe ser uno de: {sorted(_TRANSPORTES_VALIDOS)}",
             )
-        if body.estado_recepcion and body.estado_recepcion not in _RECEPCIONES_VALIDAS:
-            raise HTTPException(
-                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                detail=f"estado_recepcion debe ser uno de: {sorted(_RECEPCIONES_VALIDAS)}",
-            )
 
         fecha_ent = body.fecha_entrega or date.today()
         numero_entrega = self._generar_numero_entrega(rec.codigo, fecha_ent, body.hora_recepcion)
@@ -187,7 +182,7 @@ class RecolectorService:
         return self.repo.create_entrega(
             numero_entrega=numero_entrega,
             recolector_id=recolector_id,
-            lote_materia_prima_id=body.lote_materia_prima_id,
+            parcela_id=body.parcela_id,
             peso_kg=body.peso_kg,
             fecha_recoleccion=body.fecha_recoleccion,
             fecha_entrega=fecha_ent,
@@ -195,8 +190,6 @@ class RecolectorService:
             hora_cosecha=body.hora_cosecha,
             hora_recepcion=body.hora_recepcion,
             medio_transporte=body.medio_transporte,
-            estado_recepcion=body.estado_recepcion,
             firma_recolector=body.firma_recolector,
-            firma_responsable_acopio=body.firma_responsable_acopio,
             observaciones=body.observaciones,
         )

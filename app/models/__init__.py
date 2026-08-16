@@ -216,6 +216,9 @@ class UsuarioSistema(AuditMixin, Base):
     # FK a sí mismo: quién dio de alta este usuario (auditoría)
     creado_por = Column(Uuid(as_uuid=True), ForeignKey("usuarios_sistema.id"), nullable=True)
 
+    # Comunidad de pertenencia — solo aplica al rol recolector (texto libre)
+    comunidad = Column(String(200), nullable=True)
+
     # M:N con Comunidad — solo aplica al rol responsable_acopio
     comunidades = relationship("Comunidad", secondary="responsable_comunidad", back_populates="responsables")
 

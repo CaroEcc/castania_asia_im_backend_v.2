@@ -13,6 +13,8 @@ from app.schemas import (
     EntregaRecolectorOut,
     EntregaListResponse,
     HabilitacionVigenteOut,
+    ParcelaListResponse,
+    ParcelaOut,
 )
 from app.services.recolectores import RecolectorService
 
@@ -96,6 +98,47 @@ def habilitacion_vigente(
     current_user=Depends(require_role(UserRole.recolector)),
 ):
     return svc.get_habilitacion_vigente(current_user.id)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/recolectores/me/parcelas  — recolector autenticado
+#   Devuelve las parcelas propias. Filtro opcional ?estado=activa|inactiva.
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/me/parcelas",
+    response_model=ParcelaListResponse,
+    summary="Parcelas del recolector autenticado",
+)
+def mis_parcelas(
+    estado: Optional[str] = Query(None, description="activa | inactiva"),
+    svc: RecolectorService = Depends(_svc),
+    current_user=Depends(require_role(UserRole.recolector)),
+):
+    from app.services.parcelas import ParcelaService
+    rec = svc.obtener_por_usuario(current_user.id)
+    parc_svc = ParcelaService(svc.db)
+    parcelas = parc_svc.listar(rec.id, estado)
+    return ParcelaListResponse(total=len(parcelas), parcelas=parcelas)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/recolectores/me/entregas  — recolector autenticado
+#   Historial de entregas propias (badge derivado por join en el frontend).
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/me/entregas",
+    response_model=EntregaListResponse,
+    summary="Historial de entregas del recolector autenticado",
+)
+def mis_entregas(
+    svc: RecolectorService = Depends(_svc),
+    current_user=Depends(require_role(UserRole.recolector)),
+):
+    rec = svc.obtener_por_usuario(current_user.id)
+    entregas = svc.listar_entregas(rec.id)
+    return EntregaListResponse(total=len(entregas), recolector_id=rec.id, entregas=entregas)
 
 
 # ---------------------------------------------------------------------------
