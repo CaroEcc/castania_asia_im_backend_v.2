@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy import (
     Column, Integer, String, Text, Numeric, Boolean, Date, DateTime, Time,
-    ForeignKey, JSON, UniqueConstraint, Uuid,
+    ForeignKey, JSON, UniqueConstraint, Uuid, Table,
 )
 from sqlalchemy.orm import relationship
 import uuid
@@ -82,6 +82,17 @@ class Comunidad(Base):
     status = Column(String(50), nullable=False)  # Activa, Inactiva
 
     reportes = relationship("Reporte", back_populates="comunidad")
+    responsables = relationship("UsuarioSistema", secondary="responsable_comunidad", back_populates="comunidades")
+
+
+# Tabla de asociación M:N — responsable_acopio ↔ Comunidad
+# Un responsable puede cubrir N comunidades; una comunidad puede tener N responsables.
+responsable_comunidad = Table(
+    "responsable_comunidad",
+    Base.metadata,
+    Column("usuario_id", Uuid(as_uuid=True), ForeignKey("usuarios_sistema.id"), primary_key=True),
+    Column("comunidad_id", Integer, ForeignKey("comunidades.id_comunidad"), primary_key=True),
+)
 
 
 class Reporte(Base):
@@ -199,14 +210,14 @@ class UsuarioSistema(AuditMixin, Base):
     # Hash bcrypt del PIN o password — NUNCA se expone en ningún response
     credencial_hash = Column(String(255), nullable=False)
 
-    # Solo relevante para recolectores
-    comunidad = Column(String(200), nullable=True)
-
     activo = Column(Boolean, default=True, nullable=False)
     fecha_creacion = Column(DateTime, default=datetime.utcnow, nullable=False)
 
     # FK a sí mismo: quién dio de alta este usuario (auditoría)
     creado_por = Column(Uuid(as_uuid=True), ForeignKey("usuarios_sistema.id"), nullable=True)
+
+    # M:N con Comunidad — solo aplica al rol responsable_acopio
+    comunidades = relationship("Comunidad", secondary="responsable_comunidad", back_populates="responsables")
 
 
 # =============================================================================
@@ -249,6 +260,7 @@ class Recolector(AuditMixin, Base):
     creado_por_usuario = relationship("UsuarioSistema", foreign_keys=[creado_por])
     comunidad = relationship("Comunidad")
     autorizaciones = relationship("AutorizacionRecolector", back_populates="recolector")
+    parcelas = relationship("Parcela", back_populates="recolector")
 
 
 class AutorizacionZafra(AuditMixin, Base):
@@ -299,17 +311,37 @@ class AutorizacionRecolector(AuditMixin, Base):
     autorizacion_zafra_id = Column(Integer, ForeignKey("autorizaciones_zafra.id"), nullable=False)
     recolector_id = Column(Integer, ForeignKey("recolectores.id"), nullable=False)
 
-    # Datos por zafra (pueden cambiar cada temporada)
-    especie = Column(String(100), nullable=True)            # especie(s) para esta zafra
-    poligono_gps = Column(JSON, nullable=True)              # GeoJSON Polygon de la parcela
-    superficie_ha = Column(Numeric(10, 4), nullable=True)   # calculada del polígono o manual
-    produccion_estimada_kg = Column(Numeric(10, 2), nullable=True)
     estado_recoleccion = Column(String(100), nullable=True) # ej: "Recolector Orgánico - Habilitado"
 
     # Relaciones
     autorizacion_zafra = relationship("AutorizacionZafra", back_populates="recolectores")
     recolector = relationship("Recolector", back_populates="autorizaciones")
     items_recepcion = relationship("ItemRecepcion", back_populates="autorizacion_recolector")
+
+
+class Parcela(AuditMixin, Base):
+    """
+    Tabla: parcelas
+    Área de cosecha declarada por un recolector en una habilitación de zafra.
+    Un recolector puede tener N parcelas en la misma AutorizacionRecolector.
+    Los datos de geolocalización y producción viven aquí.
+    """
+    __tablename__ = "parcelas"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    recolector_id = Column(Integer, ForeignKey("recolectores.id"), nullable=False)
+
+    codigo = Column(String(50), nullable=True)
+    poligono_gps = Column(JSON, nullable=True)               # GeoJSON Polygon dibujado en app móvil
+    superficie_ha = Column(Numeric(10, 4), nullable=True)    # calculada del polígono o ingresada manualmente
+    especie = Column(String(100), nullable=True)
+    produccion_estimada_kg = Column(Numeric(10, 2), nullable=True)
+    estado = Column(String(20), nullable=False, default="activa")  # activa | inactiva
+
+    # Relaciones
+    recolector = relationship("Recolector", back_populates="parcelas")
+    entregas = relationship("EntregaRecolector", back_populates="parcela")
+    items_recepcion = relationship("ItemRecepcion", back_populates="parcela")
 
 
 # =============================================================================
@@ -327,7 +359,7 @@ class EntregaRecolector(AuditMixin, Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     numero_entrega = Column(String(50), nullable=True)
     recolector_id = Column(Integer, ForeignKey("recolectores.id"), nullable=False)
-    lote_materia_prima_id = Column(Integer, ForeignKey("lotes_materia_prima.id"), nullable=True)
+    parcela_id = Column(Integer, ForeignKey("parcelas.id"), nullable=True)
 
     fecha_recoleccion = Column(Date, nullable=True)
     fecha_entrega = Column(Date, nullable=True)
@@ -343,7 +375,7 @@ class EntregaRecolector(AuditMixin, Base):
 
     # Relaciones
     recolector = relationship("Recolector")
-    lote_materia_prima = relationship("LoteMateriaPrima", back_populates="entregas")
+    parcela = relationship("Parcela", back_populates="entregas")
     items_recepcion = relationship("ItemRecepcion", back_populates="entrega_recolector")
 
 
@@ -384,7 +416,6 @@ class LoteMateriaPrima(AuditMixin, Base):
     # Relaciones
     comunidad = relationship("Comunidad")
     responsable = relationship("UsuarioSistema", foreign_keys=[responsable_id])
-    entregas = relationship("EntregaRecolector", back_populates="lote_materia_prima")
     items_recepcion = relationship("ItemRecepcion", back_populates="lote_materia_prima")
     proceso_limpieza = relationship("ProcesoLimpieza", back_populates="lote_materia_prima", uselist=False)
     proceso_ablandamiento = relationship("ProcesoAblandamiento", back_populates="lote_materia_prima", uselist=False)
@@ -404,6 +435,7 @@ class ItemRecepcion(AuditMixin, Base):
     recolector_id = Column(Integer, ForeignKey("recolectores.id"), nullable=False)
     entrega_recolector_id = Column(Integer, ForeignKey("entregas_recolector.id"), nullable=True)
     autorizacion_recolector_id = Column(Integer, ForeignKey("autorizaciones_recolector.id"), nullable=True)
+    parcela_id = Column(Integer, ForeignKey("parcelas.id"), nullable=True)
 
     zona_autorizacion = Column(String(100), nullable=True)
     tipo_asai = Column(String(20), nullable=True)            # altura | bajio
@@ -419,6 +451,7 @@ class ItemRecepcion(AuditMixin, Base):
     recolector = relationship("Recolector")
     entrega_recolector = relationship("EntregaRecolector", back_populates="items_recepcion")
     autorizacion_recolector = relationship("AutorizacionRecolector", back_populates="items_recepcion")
+    parcela = relationship("Parcela", back_populates="items_recepcion")
 
 
 # =============================================================================
