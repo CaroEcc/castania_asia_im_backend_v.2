@@ -381,6 +381,31 @@ class EntregaListResponse(BaseModel):
 
 
 # =============================================================================
+# SCHEMAS — MÓDULO 1: HABILITACIÓN VIGENTE (recolector/me)
+# =============================================================================
+
+class AutorizacionZafraResumen(BaseModel):
+    id: int
+    cosecha: int
+    codigo_documento: Optional[str]
+    zona_autorizacion: Optional[str]
+    fecha_inicio_recoleccion: Optional[date]
+    fecha_fin_recoleccion: Optional[date]
+
+    class Config:
+        from_attributes = True
+
+
+class HabilitacionVigenteOut(BaseModel):
+    id: int
+    estado_recoleccion: Optional[str]
+    autorizacion_zafra: AutorizacionZafraResumen
+
+    class Config:
+        from_attributes = True
+
+
+# =============================================================================
 # SCHEMAS — MÓDULO 2: LOTES DE MATERIA PRIMA
 # =============================================================================
 

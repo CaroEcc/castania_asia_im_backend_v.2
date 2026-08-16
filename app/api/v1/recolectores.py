@@ -12,6 +12,7 @@ from app.schemas import (
     EntregaRecolectorCreate,
     EntregaRecolectorOut,
     EntregaListResponse,
+    HabilitacionVigenteOut,
 )
 from app.services.recolectores import RecolectorService
 
@@ -77,6 +78,24 @@ def listar_recolectores(
         page_size=page_size,
     )
     return RecolectorListResponse(total=total, page=page, page_size=page_size, recolectores=items)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/recolectores/me/habilitacion-vigente  — recolector autenticado
+#   Devuelve la AutorizacionRecolector de la zafra en curso (año actual).
+#   Usado en: banner del Inicio, pantalla de Perfil.
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/me/habilitacion-vigente",
+    response_model=HabilitacionVigenteOut,
+    summary="Habilitación SERNAP vigente del recolector autenticado",
+)
+def habilitacion_vigente(
+    svc: RecolectorService = Depends(_svc),
+    current_user=Depends(require_role(UserRole.recolector)),
+):
+    return svc.get_habilitacion_vigente(current_user.id)
 
 
 # ---------------------------------------------------------------------------

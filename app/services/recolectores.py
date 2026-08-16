@@ -6,7 +6,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash
-from app.models import Recolector, EntregaRecolector, UsuarioSistema
+from app.models import AutorizacionRecolector, Recolector, EntregaRecolector, UsuarioSistema
 from app.repositories.recolectores import RecolectorRepository
 from app.schemas import RecolectorCreate, RecolectorUpdate, EntregaRecolectorCreate
 
@@ -139,6 +139,21 @@ class RecolectorService:
         if not updates:
             return rec
         return self.repo.update(rec, **updates)
+
+    # ------------------------------------------------------------------
+    # Habilitación vigente
+    # ------------------------------------------------------------------
+
+    def get_habilitacion_vigente(self, usuario_id) -> AutorizacionRecolector:
+        rec = self.obtener_por_usuario(usuario_id)
+        cosecha_actual = datetime.utcnow().year
+        habilitacion = self.repo.get_habilitacion_vigente(rec.id, cosecha_actual)
+        if not habilitacion:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Sin habilitación vigente para la cosecha {cosecha_actual}",
+            )
+        return habilitacion
 
     # ------------------------------------------------------------------
     # Entregas

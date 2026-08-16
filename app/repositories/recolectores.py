@@ -4,7 +4,7 @@ from typing import Optional
 
 from sqlalchemy.orm import Session
 
-from app.models import Recolector, EntregaRecolector
+from app.models import Recolector, EntregaRecolector, AutorizacionRecolector, AutorizacionZafra
 
 
 class RecolectorRepository:
@@ -89,3 +89,20 @@ class RecolectorRepository:
         self.db.commit()
         self.db.refresh(entrega)
         return entrega
+
+    # ------------------------------------------------------------------
+    # Habilitación vigente
+    # ------------------------------------------------------------------
+
+    def get_habilitacion_vigente(
+        self, recolector_id: int, cosecha: int
+    ) -> Optional[AutorizacionRecolector]:
+        return (
+            self.db.query(AutorizacionRecolector)
+            .join(AutorizacionZafra)
+            .filter(
+                AutorizacionRecolector.recolector_id == recolector_id,
+                AutorizacionZafra.cosecha == cosecha,
+            )
+            .first()
+        )
