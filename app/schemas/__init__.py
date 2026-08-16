@@ -269,3 +269,17 @@ class ComunidadListResponse(BaseModel):
     page: int
     page_size: int
     comunidades: List[ComunidadOut]
+
+
+# =============================================================================
+# SCHEMAS PARA ROLES
+# =============================================================================
+
+class RolOut(BaseModel):
+    id: int
+    nombre: str
+    descripcion: str
+    metodo_auth: str
+
+    class Config:
+        from_attributes = True
