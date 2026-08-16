@@ -378,3 +378,28 @@ class EntregaListResponse(BaseModel):
     total: int
     recolector_id: int
     entregas: List[EntregaRecolectorOut]
+
+
+# =============================================================================
+# SCHEMAS — MÓDULO 2: LOTES DE MATERIA PRIMA
+# =============================================================================
+
+class LoteMateriaPrimaOut(BaseModel):
+    id: int
+    numero_lote: str
+    comunidad_id: int
+    responsable_id: uuid.UUID
+    es_organico: bool
+    fruto: str
+    fecha_apertura: datetime
+    fecha_cierre: Optional[datetime]
+    total_kg: Decimal
+    total_bs: Decimal
+    estado: str
+    motivo_rechazo: Optional[str]
+    rechazado_en: Optional[datetime]
+    vobo_control: bool
+    vobo_planta: bool
+
+    class Config:
+        from_attributes = True
