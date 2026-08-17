@@ -82,6 +82,23 @@ def listar_recolectores(
 
 
 # ---------------------------------------------------------------------------
+# GET /api/v1/recolectores/me  — recolector autenticado
+#   Perfil propio. El recolector_id se deriva del JWT — nunca lo envía el cliente.
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/me",
+    response_model=RecolectorOut,
+    summary="Perfil del recolector autenticado",
+)
+def mi_perfil(
+    svc: RecolectorService = Depends(_svc),
+    current_user=Depends(require_role(UserRole.recolector)),
+):
+    return svc.obtener_por_usuario(current_user.id)
+
+
+# ---------------------------------------------------------------------------
 # GET /api/v1/recolectores/me/parcelas  — recolector autenticado
 #   Devuelve las parcelas propias. Filtro opcional ?estado=activa|inactiva.
 # ---------------------------------------------------------------------------
