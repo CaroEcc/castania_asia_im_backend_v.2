@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from datetime import date, datetime
 
 from fastapi import HTTPException, status
@@ -37,6 +38,10 @@ class RecolectorService:
         return rec
 
     @staticmethod
+    def _generar_pin() -> str:
+        return str(random.randint(100000, 999999))
+
+    @staticmethod
     def _generar_numero_entrega(codigo: str, fecha_entrega: date, hora_recepcion) -> str:
         """Formato: {codigo_recolector}-{YYYYMMDD}-{HHMM}"""
         if hora_recepcion:
@@ -49,11 +54,13 @@ class RecolectorService:
     # Recolectores
     # ------------------------------------------------------------------
 
-    def crear(self, body: RecolectorCreate, creado_por_id) -> Recolector:
+    def crear(self, body: RecolectorCreate, creado_por_id) -> tuple[Recolector, str]:
         """
         Crea en una sola transacción:
           1. UsuarioSistema (username = codigo, rol = recolector, metodo_auth = pin)
           2. Recolector vinculado al usuario creado
+        Devuelve (recolector, pin_generado). pin_generado es el PIN en texto plano,
+        visible UNA SOLA VEZ en la respuesta del POST.
         """
         if self.repo.get_by_codigo(body.codigo):
             raise HTTPException(
@@ -61,13 +68,15 @@ class RecolectorService:
                 detail=f"Ya existe un recolector con el código '{body.codigo}'",
             )
 
+        pin = body.credencial if body.credencial else self._generar_pin()
+
         # 1. Crear cuenta de sistema
         usuario = UsuarioSistema(
             nombre_completo=body.nombre_completo,
             username=body.codigo,
             rol=_ROL_RECOLECTOR,
             metodo_auth=_METODO_AUTH_PIN,
-            credencial_hash=get_password_hash(body.credencial),
+            credencial_hash=get_password_hash(pin),
             creado_por=creado_por_id,
         )
         self.db.add(usuario)
@@ -90,7 +99,7 @@ class RecolectorService:
         self.db.add(rec)
         self.db.commit()
         self.db.refresh(rec)
-        return rec
+        return rec, pin
 
     def listar(
         self,

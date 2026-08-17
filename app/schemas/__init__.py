@@ -299,7 +299,7 @@ class RecolectorCreate(BaseModel):
     ci: str = Field(..., min_length=1, max_length=20)
     comunidad_id: int
     fecha_registro: date
-    credencial: str = Field(..., min_length=6, max_length=6, pattern=r"^\d{6}$", description="PIN inicial de 6 dígitos numéricos")
+    credencial: Optional[str] = Field(None, min_length=6, max_length=6, pattern=r"^\d{6}$", description="PIN inicial de 6 dígitos. Si se omite, el backend genera uno automáticamente.")
     documento_tenencia: Optional[str] = Field(None, description="ej: PGIBT N° 123-2024")
     codigo_tc: Optional[str] = Field(None, description="N° TC del productor, ej: BO-BIO-6088")
     especie: Optional[str] = None
@@ -329,6 +329,13 @@ class RecolectorOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class RecolectorCreateResponse(RecolectorOut):
+    pin_generado: Optional[str] = Field(
+        None,
+        description="PIN generado automáticamente. Solo visible en esta respuesta, nunca recuperable."
+    )
 
 
 class RecolectorListResponse(BaseModel):

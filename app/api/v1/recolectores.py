@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.deps import get_db, get_current_user, require_role, UserRole
 from app.schemas import (
     RecolectorCreate,
+    RecolectorCreateResponse,
     RecolectorListResponse,
     RecolectorOut,
     RecolectorUpdate,
@@ -37,7 +38,7 @@ def _svc(db: Session = Depends(get_db)) -> RecolectorService:
 
 @router.post(
     "",
-    response_model=RecolectorOut,
+    response_model=RecolectorCreateResponse,
     status_code=status.HTTP_201_CREATED,
 )
 def crear_recolector(
@@ -45,7 +46,10 @@ def crear_recolector(
     svc: RecolectorService = Depends(_svc),
     current_user=Depends(require_role(UserRole.responsable_acopio, UserRole.administrador)),
 ):
-    return svc.crear(body, current_user.id)
+    rec, pin = svc.crear(body, current_user.id)
+    return RecolectorCreateResponse.model_validate(rec, from_attributes=True).model_copy(
+        update={"pin_generado": pin}
+    )
 
 
 # ---------------------------------------------------------------------------
