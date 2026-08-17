@@ -7,7 +7,7 @@ from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.security import get_password_hash
-from app.models import AutorizacionRecolector, Recolector, EntregaRecolector, UsuarioSistema
+from app.models import AutorizacionRecolector, Comunidad, Recolector, EntregaRecolector, UsuarioSistema
 from app.repositories.recolectores import RecolectorRepository
 from app.schemas import RecolectorCreate, RecolectorUpdate, EntregaRecolectorCreate
 
@@ -70,6 +70,15 @@ class RecolectorService:
 
         pin = body.credencial if body.credencial else self._generar_pin()
 
+        comunidad = self.db.query(Comunidad).filter(
+            Comunidad.id_comunidad == body.comunidad_id
+        ).first()
+        if not comunidad:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Comunidad {body.comunidad_id} no encontrada",
+            )
+
         # 1. Crear cuenta de sistema
         usuario = UsuarioSistema(
             nombre_completo=body.nombre_completo,
@@ -77,6 +86,7 @@ class RecolectorService:
             rol=_ROL_RECOLECTOR,
             metodo_auth=_METODO_AUTH_PIN,
             credencial_hash=get_password_hash(pin),
+            comunidad=comunidad.nombre,
             creado_por=creado_por_id,
         )
         self.db.add(usuario)

@@ -46,7 +46,7 @@ def listar_usuarios(
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    q = db.query(UsuarioSistema)
+    q = db.query(UsuarioSistema).filter(UsuarioSistema.rol != RolUsuario.recolector)
     if rol is not None:
         q = q.filter(UsuarioSistema.rol == rol)
     if activo is not None:
