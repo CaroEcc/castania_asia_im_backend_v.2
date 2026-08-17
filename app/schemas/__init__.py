@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from datetime import datetime
 from typing import Optional, List
 from decimal import Decimal
@@ -320,12 +320,20 @@ class RecolectorOut(BaseModel):
     nombre_completo: str
     ci: str
     comunidad_id: int
+    comunidad_nombre: Optional[str] = None
     documento_tenencia: Optional[str]
     codigo_tc: Optional[str]
     especie: Optional[str]
     fecha_registro: date
     estado: str
     usuario_id: uuid.UUID
+
+    @model_validator(mode="before")
+    @classmethod
+    def _extract_comunidad_nombre(cls, data):
+        if hasattr(data, "comunidad") and data.comunidad is not None:
+            data.__dict__["comunidad_nombre"] = data.comunidad.nombre
+        return data
 
     class Config:
         from_attributes = True
