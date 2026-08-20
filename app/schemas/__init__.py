@@ -642,3 +642,331 @@ class EntregaSinRecepcionOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+# =============================================================================
+# SCHEMAS — MÓDULO OPERADOR DE PLANTA
+# =============================================================================
+
+# --- Limpieza ---
+class SubprocesoLimpiezaCreate(BaseModel):
+    numero_proceso: int
+    hora_inicio_seco: Optional[time] = None
+    hora_final_seco: Optional[time] = None
+    residuos_kg: Optional[Decimal] = None
+    tipo_recipiente_inmersion: Optional[str] = None
+    hora_inicio_lavado: Optional[time] = None
+    hora_final_lavado: Optional[time] = None
+
+class SubprocesoLimpiezaOut(SubprocesoLimpiezaCreate):
+    id: int
+    class Config:
+        from_attributes = True
+
+class ProcesoLimpiezaCreate(BaseModel):
+    lote_materia_prima_id: int
+    hora_inicio: Optional[time] = None
+    hora_final: Optional[time] = None
+    total_kg_salida: Optional[Decimal] = Field(None, gt=0)
+    numero_procesos: Optional[int] = None
+    observaciones: Optional[str] = None
+    firma_responsable_planilla: bool = False
+    vobo_planta: bool = False
+    vobo_control_calidad: bool = False
+    subprocesos: List[SubprocesoLimpiezaCreate] = Field(default_factory=list)
+
+class ProcesoLimpiezaOut(BaseModel):
+    id: int
+    lote_materia_prima_id: int
+    responsable_id: uuid.UUID
+    hora_inicio: Optional[time]
+    hora_final: Optional[time]
+    total_kg_ingreso: Optional[Decimal]
+    total_kg_salida: Optional[Decimal]
+    numero_procesos: Optional[int]
+    es_organico: bool
+    observaciones: Optional[str]
+    firma_responsable_planilla: bool
+    vobo_planta: bool
+    vobo_control_calidad: bool
+    subprocesos: List[SubprocesoLimpiezaOut] = []
+    class Config:
+        from_attributes = True
+
+# --- Ablandamiento ---
+class SubprocesoAblandamientoCreate(BaseModel):
+    numero_proceso: int
+    tipo_recipiente_ablandamiento: Optional[str] = None
+    litros_agua_ablandamiento: Optional[Decimal] = None
+    tipo_recipiente_enfriado: Optional[str] = None
+    litros_agua_enfriado_t1000: Optional[Decimal] = None
+    litros_agua_enfriado_canastas: Optional[Decimal] = None
+    hora_inicio: Optional[time] = None
+    hora_final: Optional[time] = None
+    temp_inicio: Optional[Decimal] = None
+    temp_intermedia: Optional[Decimal] = None
+    temp_final: Optional[Decimal] = None
+    # diferencia_temp calculated by backend: temp_inicio - temp_final
+
+class SubprocesoAblandamientoOut(SubprocesoAblandamientoCreate):
+    id: int
+    diferencia_temp: Optional[Decimal] = None
+    class Config:
+        from_attributes = True
+
+class ProcesoAblandamientoCreate(BaseModel):
+    lote_materia_prima_id: int
+    hora_inicio: Optional[time] = None
+    hora_final: Optional[time] = None
+    total_kg_salida: Optional[Decimal] = Field(None, gt=0)
+    numero_procesos: Optional[int] = None
+    observaciones: Optional[str] = None
+    firma_responsable_planilla: bool = False
+    vobo_planta: bool = False
+    vobo_control_calidad: bool = False
+    subprocesos: List[SubprocesoAblandamientoCreate] = Field(default_factory=list)
+
+class ProcesoAblandamientoOut(BaseModel):
+    id: int
+    lote_materia_prima_id: int
+    proceso_limpieza_id: int
+    responsable_id: uuid.UUID
+    hora_inicio: Optional[time]
+    hora_final: Optional[time]
+    total_kg_ingreso: Optional[Decimal]
+    total_kg_salida: Optional[Decimal]
+    numero_procesos: Optional[int]
+    es_organico: bool
+    observaciones: Optional[str]
+    firma_responsable_planilla: bool
+    vobo_planta: bool
+    vobo_control_calidad: bool
+    subprocesos: List[SubprocesoAblandamientoOut] = []
+    class Config:
+        from_attributes = True
+
+# --- Elaboración de pulpa + LPT ---
+class LoteProductoTerminadoCreate(BaseModel):
+    tipo_pulpa: str = Field(..., description="premium | popular")
+    unidad_envase: Optional[str] = None
+    fecha_proceso: Optional[date] = None
+    hora_inicio: Optional[time] = None
+    hora_final: Optional[time] = None
+    total_kg_fruto: Optional[Decimal] = Field(None, gt=0)
+    total_kg_pulpa: Optional[Decimal] = Field(None, gt=0)
+    porcentaje_solidos: Optional[Decimal] = None
+    grados_brix: Optional[Decimal] = None
+    ph: Optional[Decimal] = None
+    # rendimiento_pct calculated by backend
+
+class LoteProductoTerminadoOut(BaseModel):
+    id: int
+    numero_lote: str
+    proceso_elaboracion_id: int
+    lote_materia_prima_id: int
+    fecha_proceso: Optional[date]
+    hora_inicio: Optional[time]
+    hora_final: Optional[time]
+    tipo_pulpa: str
+    unidad_envase: Optional[str]
+    total_kg_fruto: Optional[Decimal]
+    total_kg_pulpa: Optional[Decimal]
+    rendimiento_pct: Optional[Decimal]
+    porcentaje_solidos: Optional[Decimal]
+    grados_brix: Optional[Decimal]
+    ph: Optional[Decimal]
+    es_organico: bool
+    total_kg: Optional[Decimal]
+    stock_actual_kg: Optional[Decimal]
+    estado: str
+    class Config:
+        from_attributes = True
+
+class ProcesoElaboracionCreate(BaseModel):
+    lote_materia_prima_id: int
+    observaciones: Optional[str] = None
+    firma_responsable_planilla: bool = False
+    vobo_planta: bool = False
+    vobo_control_calidad: bool = False
+    lotes_producto_terminado: List[LoteProductoTerminadoCreate] = Field(..., min_length=1)
+
+class ProcesoElaboracionOut(BaseModel):
+    id: int
+    lote_materia_prima_id: int
+    proceso_ablandamiento_id: int
+    responsable_id: uuid.UUID
+    es_organico: bool
+    observaciones: Optional[str]
+    firma_responsable_planilla: bool
+    vobo_planta: bool
+    vobo_control_calidad: bool
+    lotes_producto_terminado: List[LoteProductoTerminadoOut] = []
+    class Config:
+        from_attributes = True
+
+# --- Choque Térmico ---
+class ItemChoqueTermicoCreate(BaseModel):
+    lote_producto_terminado_id: int
+    numero_freezer: Optional[int] = None
+    tipo_pulpa: Optional[str] = None
+    tipo_envase: Optional[str] = None
+    unidad: Optional[str] = None
+    cantidad: Optional[Decimal] = None
+    fecha_ingreso: Optional[date] = None
+    fecha_salida: Optional[date] = None
+
+class ItemChoqueTermicoOut(ItemChoqueTermicoCreate):
+    id: int
+    sesion_id: int
+    class Config:
+        from_attributes = True
+
+class SesionChoqueTermicoCreate(BaseModel):
+    hora_inicio: Optional[time] = None
+    hora_final: Optional[time] = None
+    es_organico: bool
+    observaciones: Optional[str] = None
+    firma_responsable_planilla: bool = False
+    vobo_planta: bool = False
+    vobo_control_calidad: bool = False
+    items: List[ItemChoqueTermicoCreate] = Field(..., min_length=1)
+
+class SesionChoqueTermicoOut(BaseModel):
+    id: int
+    responsable_id: uuid.UUID
+    hora_inicio: Optional[time]
+    hora_final: Optional[time]
+    es_organico: bool
+    observaciones: Optional[str]
+    firma_responsable_planilla: bool
+    vobo_planta: bool
+    vobo_control_calidad: bool
+    items: List[ItemChoqueTermicoOut] = []
+    class Config:
+        from_attributes = True
+
+# --- Cámara de frío ---
+class InventarioCamaraFrioCreate(BaseModel):
+    lote_producto_terminado_id: int
+    tipo_pulpa: Optional[str] = None
+    estado: Optional[str] = Field(None, description="bueno | observado")
+    tipo_envase: Optional[str] = None
+    unidad: Optional[str] = None
+    cantidad: Optional[Decimal] = None
+    fecha_ingreso: Optional[date] = None
+    fecha_salida: Optional[date] = None
+    observaciones: Optional[str] = None
+    firma_responsable_planilla: bool = False
+    vobo_planta: bool = False
+    vobo_control_calidad: bool = False
+
+class InventarioCamaraFrioOut(InventarioCamaraFrioCreate):
+    id: int
+    responsable_id: uuid.UUID
+    class Config:
+        from_attributes = True
+
+# --- Matriz de procesos ---
+class ItemMatrizCreate(BaseModel):
+    proceso: str = Field(..., description="Nombre de la etapa del proceso")
+    responsable_nombre: Optional[str] = None
+    tareas_principales: Optional[str] = None
+    herramientas_equipos: Optional[str] = None
+
+class ItemMatrizOut(ItemMatrizCreate):
+    id: int
+    class Config:
+        from_attributes = True
+
+class MatrizProcesosCreate(BaseModel):
+    lote_producto_terminado_id: int
+    fecha: Optional[date] = None
+    items: List[ItemMatrizCreate] = Field(default_factory=list)
+
+class MatrizProcesosOut(BaseModel):
+    id: int
+    lote_producto_terminado_id: Optional[int]
+    responsable_id: uuid.UUID
+    fecha: Optional[date]
+    items: List[ItemMatrizOut] = []
+    class Config:
+        from_attributes = True
+
+# --- Despacho ---
+class ItemDespachoCreate(BaseModel):
+    lote_producto_terminado_id: int
+    peso_kg: Decimal = Field(..., gt=0)
+    numero_cajas: Optional[int] = None
+
+class ItemDespachoOut(ItemDespachoCreate):
+    id: int
+    despacho_id: int
+    numero_lote: Optional[str]
+    subtotal_bs: Optional[Decimal]
+    class Config:
+        from_attributes = True
+
+class FirmaBlock(BaseModel):
+    nombre: Optional[str] = None
+    ci: Optional[str] = None
+    cargo: Optional[str] = None
+
+class DespachoCreate(BaseModel):
+    fecha_despacho: date
+    numero_lote_despacho: Optional[str] = None
+    estado_producto: Optional[str] = None
+    propietario_pulpa: Optional[str] = None
+    origen_carga: Optional[str] = None
+    destino_carga: Optional[str] = None
+    detalle_transporte: Optional[str] = None
+    codigo_ncoi: Optional[str] = None
+    precio_bs_kg: Optional[Decimal] = Field(None, gt=0)
+    estado_pulpa: Optional[str] = None
+    entregado_por: Optional[FirmaBlock] = None
+    conductor: Optional[FirmaBlock] = None
+    autorizado_por: Optional[FirmaBlock] = None
+    entregado_destino: Optional[FirmaBlock] = None
+    items: List[ItemDespachoCreate] = Field(..., min_length=1)
+
+class RecepcionDestinoBody(BaseModel):
+    recibido_por_nombre: Optional[str] = None
+    recibido_por_ci: Optional[str] = None
+    recibido_por_cargo: Optional[str] = None
+    fecha_recibido: Optional[date] = None
+    cantidad_recibida_kg: Optional[Decimal] = Field(None, gt=0)
+
+class DespachoOut(BaseModel):
+    id: int
+    responsable_id: uuid.UUID
+    fecha_despacho: date
+    numero_lote_despacho: Optional[str]
+    estado_producto: Optional[str]
+    propietario_pulpa: Optional[str]
+    origen_carga: Optional[str]
+    destino_carga: Optional[str]
+    detalle_transporte: Optional[str]
+    codigo_ncoi: Optional[str]
+    precio_bs_kg: Optional[Decimal]
+    total_kg: Optional[Decimal]
+    total_bs: Optional[Decimal]
+    estado_pulpa: Optional[str]
+    entregado_por_nombre: Optional[str]
+    entregado_por_ci: Optional[str]
+    entregado_por_cargo: Optional[str]
+    conductor_nombre: Optional[str]
+    conductor_ci: Optional[str]
+    conductor_cargo: Optional[str]
+    autorizado_por_nombre: Optional[str]
+    autorizado_por_ci: Optional[str]
+    autorizado_por_cargo: Optional[str]
+    entregado_destino_nombre: Optional[str]
+    entregado_destino_ci: Optional[str]
+    entregado_destino_cargo: Optional[str]
+    recibido_por_nombre: Optional[str]
+    recibido_por_ci: Optional[str]
+    recibido_por_cargo: Optional[str]
+    fecha_recibido: Optional[date]
+    cantidad_recibida_kg: Optional[Decimal]
+    items: List[ItemDespachoOut] = []
+    class Config:
+        from_attributes = True
