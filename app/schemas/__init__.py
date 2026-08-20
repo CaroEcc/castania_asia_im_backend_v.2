@@ -459,8 +459,92 @@ class HabilitacionVigenteOut(BaseModel):
 
 
 # =============================================================================
+# SCHEMAS — MÓDULO 1: AUTORIZACIONES DE ZAFRA
+# =============================================================================
+
+class AutorizacionZafraCreate(BaseModel):
+    comunidad_id: int
+    cosecha: int = Field(..., ge=2000, le=2100, description="Año de cosecha, ej: 2026")
+    codigo_documento: Optional[str] = Field(None, max_length=100)
+    solicitante: str = Field(..., min_length=1, max_length=200)
+    ci_solicitante: Optional[str] = Field(None, max_length=20)
+    expediente: Optional[str] = Field(None, max_length=100)
+    fecha_inicio_recoleccion: Optional[date] = None
+    fecha_fin_recoleccion: Optional[date] = None
+    n_dias_recoleccion: Optional[int] = None
+    superficie_km2: Optional[Decimal] = None
+    zona_autorizacion: Optional[str] = Field(None, max_length=200)
+    sello_sernap: bool = False
+    recolector_ids: List[int] = Field(default_factory=list, description="IDs de recolectores a habilitar en esta autorización")
+
+
+class AutorizacionRecolectorOut(BaseModel):
+    id: int
+    recolector_id: int
+    especie: Optional[str]
+    superficie_ha: Optional[Decimal]
+    produccion_estimada_kg: Optional[Decimal]
+    estado_recoleccion: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+
+class AutorizacionZafraOut(BaseModel):
+    id: int
+    comunidad_id: int
+    cosecha: int
+    codigo_documento: Optional[str]
+    solicitante: str
+    ci_solicitante: Optional[str]
+    expediente: Optional[str]
+    fecha_inicio_recoleccion: Optional[date]
+    fecha_fin_recoleccion: Optional[date]
+    n_dias_recoleccion: Optional[int]
+    superficie_km2: Optional[Decimal]
+    zona_autorizacion: Optional[str]
+    sello_sernap: bool
+    recolectores: List[AutorizacionRecolectorOut] = []
+
+    class Config:
+        from_attributes = True
+
+
+class HabilitarRecolectoresBody(BaseModel):
+    recolector_ids: List[int] = Field(..., min_length=1)
+
+
+class RecolectorHabilitadoOut(BaseModel):
+    """Recolector con datos de su entrega más reciente para la lista de zafra."""
+    id: int
+    codigo: str
+    nombre_completo: str
+    autorizacion_recolector_id: int
+    ultima_entrega_id: Optional[int] = None
+    fecha_recoleccion: Optional[date] = None
+    fecha_entrega: Optional[date] = None
+    tipo_envase: Optional[str] = None
+    peso_kg: Optional[Decimal] = None
+    hora_cosecha: Optional[str] = None
+    hora_recepcion: Optional[str] = None
+    medio_transporte: Optional[str] = None
+    estado_recepcion: Optional[str] = None
+    observaciones: Optional[str] = None
+    badge: str = Field(description="sin_datos | pendiente | recibido | rechazado")
+
+    class Config:
+        from_attributes = True
+
+
+# =============================================================================
 # SCHEMAS — MÓDULO 2: LOTES DE MATERIA PRIMA
 # =============================================================================
+
+class LoteMateriaPrimaCreate(BaseModel):
+    comunidad_id: int
+    es_organico: bool
+    fruto: str = "asaí"
+
 
 class LoteMateriaPrimaOut(BaseModel):
     id: int
@@ -478,6 +562,83 @@ class LoteMateriaPrimaOut(BaseModel):
     rechazado_en: Optional[datetime]
     vobo_control: bool
     vobo_planta: bool
+    total_recepciones: Optional[int] = None
+
+    class Config:
+        from_attributes = True
+
+
+class LoteListResponse(BaseModel):
+    total: int
+    lotes: List[LoteMateriaPrimaOut]
+
+
+class CerrarLoteBody(BaseModel):
+    vobo_control: bool = True
+
+
+class RechazarLoteBody(BaseModel):
+    motivo_rechazo: str = Field(..., min_length=1)
+
+
+# =============================================================================
+# SCHEMAS — MÓDULO 2: ITEMS DE RECEPCIÓN
+# =============================================================================
+
+class ItemRecepcionCreate(BaseModel):
+    recolector_id: int
+    autorizacion_recolector_id: Optional[int] = None
+    entrega_recolector_id: Optional[int] = Field(None, description="FK a EntregaRecolector si el recolector ya sincronizó")
+    zona_autorizacion: Optional[str] = None
+    tipo_asai: Optional[str] = Field(None, description="altura | bajio")
+    numero_compra: Optional[int] = None
+    peso_kg: Decimal = Field(..., gt=0)
+    precio_bs_kg: Decimal = Field(..., gt=0)
+    firma_entrega: bool = False
+    firma_pago: bool = False
+    # Datos del cosechador (pueden venir de EntregaRecolector o ingresarse manualmente)
+    fecha_recoleccion: Optional[date] = None
+    fecha_entrega: Optional[date] = None
+    tipo_envase: Optional[str] = None
+    hora_cosecha: Optional[time] = None
+    hora_recepcion: Optional[time] = None
+    medio_transporte: Optional[str] = None
+    parcela_id: Optional[int] = None
+
+
+class ItemRecepcionOut(BaseModel):
+    id: int
+    lote_materia_prima_id: int
+    recolector_id: int
+    entrega_recolector_id: Optional[int]
+    autorizacion_recolector_id: Optional[int]
+    zona_autorizacion: Optional[str]
+    tipo_asai: Optional[str]
+    numero_compra: Optional[int]
+    peso_kg: Decimal
+    precio_bs_kg: Decimal
+    precio_total_bs: Decimal
+    firma_entrega: bool
+    firma_pago: bool
+
+    class Config:
+        from_attributes = True
+
+
+class EntregaSinRecepcionOut(BaseModel):
+    """EntregaRecolector pendiente de vincular a un ItemRecepcion."""
+    id: int
+    numero_entrega: Optional[str]
+    recolector_id: int
+    parcela_id: Optional[int]
+    peso_kg: Decimal
+    fecha_recoleccion: Optional[date]
+    fecha_entrega: Optional[date]
+    tipo_envase: Optional[str]
+    hora_cosecha: Optional[time]
+    hora_recepcion: Optional[time]
+    medio_transporte: Optional[str]
+    observaciones: Optional[str]
 
     class Config:
         from_attributes = True
