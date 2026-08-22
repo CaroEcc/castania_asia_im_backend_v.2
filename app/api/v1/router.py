@@ -16,6 +16,7 @@ from app.api.v1 import (
     camara_frio,
     matrices,
     despachos,
+    usuarios,
 )
 
 router = APIRouter(prefix="/api/v1")
@@ -34,3 +35,4 @@ router.include_router(choque_termico.router)
 router.include_router(camara_frio.router)
 router.include_router(matrices.router)
 router.include_router(despachos.router)
+router.include_router(usuarios.router)

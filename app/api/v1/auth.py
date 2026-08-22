@@ -16,6 +16,7 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"
+    usuario_id: str
     rol: str
     nombre_completo: str
 
@@ -48,6 +49,7 @@ def login(body: LoginRequest, db: Session = Depends(get_db)):
     token = create_access_token({"sub": str(usuario.id), "rol": usuario.rol})
     return TokenResponse(
         access_token=token,
+        usuario_id=str(usuario.id),
         rol=usuario.rol,
         nombre_completo=usuario.nombre_completo,
     )

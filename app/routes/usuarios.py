@@ -4,7 +4,7 @@ import uuid
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 from app.core.security import get_password_hash
 from app.core.deps import get_db, require_role, UserRole
@@ -28,7 +28,12 @@ def _generar_pin() -> str:
 
 
 def _get_or_404(db: Session, usuario_id: uuid.UUID) -> UsuarioSistema:
-    usuario = db.query(UsuarioSistema).filter(UsuarioSistema.id == usuario_id).first()
+    usuario = (
+        db.query(UsuarioSistema)
+        .options(selectinload(UsuarioSistema.comunidades))
+        .filter(UsuarioSistema.id == usuario_id)
+        .first()
+    )
     if not usuario:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Usuario no encontrado")
     return usuario
@@ -46,7 +51,11 @@ def listar_usuarios(
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
-    q = db.query(UsuarioSistema).filter(UsuarioSistema.rol != RolUsuario.recolector)
+    q = (
+        db.query(UsuarioSistema)
+        .options(selectinload(UsuarioSistema.comunidades))
+        .filter(UsuarioSistema.rol != RolUsuario.recolector)
+    )
     if rol is not None:
         q = q.filter(UsuarioSistema.rol == rol)
     if activo is not None:

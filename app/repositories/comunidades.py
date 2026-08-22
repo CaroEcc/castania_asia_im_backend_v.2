@@ -115,6 +115,15 @@ class ComunidadRepository:
             )
             self.db.commit()
 
+    def get_comunidades_by_usuario(self, usuario_id: _uuid.UUID) -> list[Comunidad]:
+        return (
+            self.db.query(Comunidad)
+            .join(responsable_comunidad, Comunidad.id_comunidad == responsable_comunidad.c.comunidad_id)
+            .filter(responsable_comunidad.c.usuario_id == usuario_id)
+            .order_by(Comunidad.nombre)
+            .all()
+        )
+
     def desasignar_responsable(self, comunidad_id: int, usuario_id: _uuid.UUID) -> bool:
         result = self.db.execute(
             responsable_comunidad.delete().where(

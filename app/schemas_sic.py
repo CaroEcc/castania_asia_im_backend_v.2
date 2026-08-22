@@ -6,7 +6,7 @@ Archivo separado de schemas.py para no colisionar con los schemas de la app móv
 import uuid
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import List, Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -68,13 +68,29 @@ class ResetCredencialRequest(BaseModel):
 # Output schemas — NUNCA incluyen credencial_hash
 # ---------------------------------------------------------------------------
 
+class ComunidadResumen(BaseModel):
+    """Resumen mínimo de comunidad para incluir en UsuarioOut."""
+    id_comunidad: int
+    nombre: str
+    abreviacion: str
+
+    model_config = {"from_attributes": True}
+
+
 class UsuarioOut(BaseModel):
     id: uuid.UUID
     nombre_completo: str
     username: str
     rol: str
     metodo_auth: str
-    comunidad: Optional[str]
+    comunidad: Optional[str] = Field(
+        None,
+        description="Solo aplica al rol recolector: comunidad de pertenencia (texto libre)."
+    )
+    comunidades: List[ComunidadResumen] = Field(
+        default_factory=list,
+        description="Solo aplica al rol responsable_acopio: comunidades asignadas vía M:N."
+    )
     activo: bool
     fecha_creacion: datetime
     creado_por: Optional[uuid.UUID]

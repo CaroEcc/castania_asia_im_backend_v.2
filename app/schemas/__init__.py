@@ -274,16 +274,19 @@ class ComunidadListResponse(BaseModel):
 
 
 class ResponsableComunidadOut(BaseModel):
-    usuario_id: uuid.UUID
+    usuario_id: uuid.UUID = Field(alias="id")
     nombre_completo: str
     username: str
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True, "populate_by_name": True}
 
 
 class AsignarResponsablesBody(BaseModel):
     usuario_ids: List[uuid.UUID] = Field(..., min_length=1, description="UUIDs de usuarios con rol responsable_acopio")
+
+
+class ComunidadListBody(BaseModel):
+    comunidad_ids: List[int] = Field(..., min_length=1, description="IDs de comunidades a asignar")
 
 
 # =============================================================================
