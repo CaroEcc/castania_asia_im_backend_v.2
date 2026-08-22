@@ -67,7 +67,7 @@ class AutorizacionRecolectorService:
                 )
                 if item is None:
                     badge = "pendiente"
-                elif item.firma_entrega and item.estado_recepcion == "aceptado":
+                elif item.firma_entrega:
                     badge = "recibido"
                 else:
                     badge = "rechazado"
