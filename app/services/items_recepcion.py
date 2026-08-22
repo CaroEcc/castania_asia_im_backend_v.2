@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.models import EntregaRecolector, LoteMateriaPrima
 from app.repositories.items_recepcion import ItemRecepcionRepository
 from app.repositories.lotes import LoteMateriaPrimaRepository
-from app.schemas import ItemRecepcionCreate
+from app.schemas import ItemRecepcionCreate, ItemRecepcionOut
 
 _TIPOS_ASAI_VALIDOS = {"altura", "bajio"}
 
@@ -70,7 +70,6 @@ class ItemRecepcionService:
             precio_total_bs=precio_total,
             firma_entrega=body.firma_entrega,
             firma_pago=body.firma_pago,
-            estado_recepcion="aceptado" if body.firma_entrega else None,
         )
 
         # Actualizar totales del lote
@@ -81,10 +80,10 @@ class ItemRecepcionService:
         self.db.commit()
         self.db.refresh(item)
 
-        result = {"data": item}
+        out = ItemRecepcionOut.model_validate(item)
         if advertencias:
-            result["advertencias"] = advertencias
-        return result
+            return {**out.model_dump(), "advertencias": advertencias}
+        return out
 
     def listar_por_lote(self, lote_id: int):
         return self.repo.list_by_lote(lote_id)

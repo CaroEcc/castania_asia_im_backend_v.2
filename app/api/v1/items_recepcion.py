@@ -29,6 +29,7 @@ def _svc(db: Session = Depends(get_db)) -> ItemRecepcionService:
     status_code=201,
     dependencies=[_roles_recepcion],
     summary="Registrar recepción de un recolector en el lote activo",
+    response_model=ItemRecepcionOut,
 )
 def registrar_recepcion(
     lote_id: int,
