@@ -8,7 +8,7 @@ from app.api.v1 import (
     parcelas,
     entregas_recolector,
     lotes,
-    autorizaciones_zafra,
+    recolectores_habilitados,
     items_recepcion,
     procesos_planta,
     lotes_terminado,
@@ -27,7 +27,7 @@ router.include_router(recolectores.router)
 router.include_router(parcelas.router)
 router.include_router(entregas_recolector.router)
 router.include_router(lotes.router)
-router.include_router(autorizaciones_zafra.router)
+router.include_router(recolectores_habilitados.router)
 router.include_router(items_recepcion.router)
 router.include_router(procesos_planta.router)
 router.include_router(lotes_terminado.router)

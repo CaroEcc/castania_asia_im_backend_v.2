@@ -266,58 +266,27 @@ class Recolector(AuditMixin, Base):
     parcelas = relationship("Parcela", back_populates="recolector")
 
 
-class AutorizacionZafra(AuditMixin, Base):
-    """
-    Tabla: autorizaciones_zafra
-    Cabecera del Formulario 1.1 (SERNAP) — autorización por comunidad y temporada.
-    Una autorización habilita a N recolectores de esa comunidad para esa zafra.
-    """
-    __tablename__ = "autorizaciones_zafra"
-
-    id = Column(Integer, primary_key=True, autoincrement=True)
-
-    comunidad_id = Column(Integer, ForeignKey("comunidades.id_comunidad"), nullable=False)
-    creado_por = Column(Uuid(as_uuid=True), ForeignKey("usuarios_sistema.id"), nullable=False)
-
-    codigo_documento = Column(String(100), nullable=True)   # ej: COD-C.C. N° DIR-RRNM-N° 004/2026
-    solicitante = Column(String(200), nullable=False)
-    ci_solicitante = Column(String(20), nullable=True)
-    expediente = Column(String(100), nullable=True)
-    cosecha = Column(Integer, nullable=False)               # año de cosecha, ej: 2026
-    fecha_inicio_recoleccion = Column(Date, nullable=True)
-    fecha_fin_recoleccion = Column(Date, nullable=True)
-    n_dias_recoleccion = Column(Integer, nullable=True)
-    superficie_km2 = Column(Numeric(10, 4), nullable=True)
-    zona_autorizacion = Column(String(200), nullable=True)  # zona geográfica autorizada
-    sello_sernap = Column(Boolean, nullable=False, default=False)
-
-    # Relaciones
-    comunidad = relationship("Comunidad")
-    creado_por_usuario = relationship("UsuarioSistema", foreign_keys=[creado_por])
-    recolectores = relationship("AutorizacionRecolector", back_populates="autorizacion_zafra")
-
-
 class AutorizacionRecolector(AuditMixin, Base):
     """
     Tabla: autorizaciones_recolector
-    Pivot N:M entre AutorizacionZafra y Recolector.
-    Almacena los datos por zafra del recolector (Formulario 1.2):
-    polígono GPS, superficie, producción estimada y estado de certificación.
+    Habilita a un recolector para una campaña de recolección (comunidad + cosecha).
+    Reemplaza la relación previa con AutorizacionZafra — la habilitación se registra
+    directamente sin necesidad de un documento cabecera.
     """
     __tablename__ = "autorizaciones_recolector"
     __table_args__ = (
-        UniqueConstraint("autorizacion_zafra_id", "recolector_id", name="uq_autorizacion_recolector"),
+        UniqueConstraint("comunidad_id", "cosecha", "recolector_id", name="uq_autorizacion_recolector"),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    autorizacion_zafra_id = Column(Integer, ForeignKey("autorizaciones_zafra.id"), nullable=False)
+    comunidad_id = Column(Integer, ForeignKey("comunidades.id_comunidad"), nullable=False)
+    cosecha = Column(Integer, nullable=False)               # año de campaña, ej: 2026
     recolector_id = Column(Integer, ForeignKey("recolectores.id"), nullable=False)
-
-    estado_recoleccion = Column(String(100), nullable=True) # ej: "Recolector Orgánico - Habilitado"
+    estado_recoleccion = Column(String(100), nullable=True)
 
     # Relaciones
-    autorizacion_zafra = relationship("AutorizacionZafra", back_populates="recolectores")
+    comunidad = relationship("Comunidad")
     recolector = relationship("Recolector", back_populates="autorizaciones")
     items_recepcion = relationship("ItemRecepcion", back_populates="autorizacion_recolector")
 

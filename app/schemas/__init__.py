@@ -454,85 +454,29 @@ class EntregaListResponse(BaseModel):
 # SCHEMAS — MÓDULO 1: HABILITACIÓN VIGENTE (recolector/me)
 # =============================================================================
 
-class AutorizacionZafraResumen(BaseModel):
-    id: int
-    cosecha: int
-    codigo_documento: Optional[str]
-    zona_autorizacion: Optional[str]
-    fecha_inicio_recoleccion: Optional[date]
-    fecha_fin_recoleccion: Optional[date]
-
-    class Config:
-        from_attributes = True
-
-
-class HabilitacionVigenteOut(BaseModel):
-    id: int
-    estado_recoleccion: Optional[str]
-    autorizacion_zafra: AutorizacionZafraResumen
-
-    class Config:
-        from_attributes = True
-
-
 # =============================================================================
-# SCHEMAS — MÓDULO 1: AUTORIZACIONES DE ZAFRA
+# SCHEMAS — MÓDULO 1: RECOLECTORES HABILITADOS (Campaña de recolección)
 # =============================================================================
 
-class AutorizacionZafraCreate(BaseModel):
+class HabilitarRecolectoresBody(BaseModel):
     comunidad_id: int
-    cosecha: int = Field(..., ge=2000, le=2100, description="Año de cosecha, ej: 2026")
-    codigo_documento: Optional[str] = Field(None, max_length=100)
-    solicitante: str = Field(..., min_length=1, max_length=200)
-    ci_solicitante: Optional[str] = Field(None, max_length=20)
-    expediente: Optional[str] = Field(None, max_length=100)
-    fecha_inicio_recoleccion: Optional[date] = None
-    fecha_fin_recoleccion: Optional[date] = None
-    n_dias_recoleccion: Optional[int] = None
-    superficie_km2: Optional[Decimal] = None
-    zona_autorizacion: Optional[str] = Field(None, max_length=200)
-    sello_sernap: bool = False
-    recolector_ids: List[int] = Field(default_factory=list, description="IDs de recolectores a habilitar en esta autorización")
+    cosecha: int = Field(..., ge=2000, le=2100, description="Año de campaña, ej: 2026")
+    recolector_ids: List[int] = Field(..., min_length=1, description="IDs de recolectores a habilitar")
 
 
 class AutorizacionRecolectorOut(BaseModel):
     id: int
+    comunidad_id: int
+    cosecha: int
     recolector_id: int
-    especie: Optional[str]
-    superficie_ha: Optional[Decimal]
-    produccion_estimada_kg: Optional[Decimal]
     estado_recoleccion: Optional[str]
 
     class Config:
         from_attributes = True
 
 
-class AutorizacionZafraOut(BaseModel):
-    id: int
-    comunidad_id: int
-    cosecha: int
-    codigo_documento: Optional[str]
-    solicitante: str
-    ci_solicitante: Optional[str]
-    expediente: Optional[str]
-    fecha_inicio_recoleccion: Optional[date]
-    fecha_fin_recoleccion: Optional[date]
-    n_dias_recoleccion: Optional[int]
-    superficie_km2: Optional[Decimal]
-    zona_autorizacion: Optional[str]
-    sello_sernap: bool
-    recolectores: List[AutorizacionRecolectorOut] = []
-
-    class Config:
-        from_attributes = True
-
-
-class HabilitarRecolectoresBody(BaseModel):
-    recolector_ids: List[int] = Field(..., min_length=1)
-
-
 class RecolectorHabilitadoOut(BaseModel):
-    """Recolector con datos de su entrega más reciente para la lista de zafra."""
+    """Recolector con datos de su entrega más reciente para la lista diaria."""
     id: int
     codigo: str
     nombre_completo: str

@@ -1,30 +1,19 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models import AutorizacionZafra, AutorizacionRecolector, Recolector
-from app.repositories.autorizaciones import AutorizacionZafraRepository
+from app.models import AutorizacionRecolector, EntregaRecolector, ItemRecepcion, Recolector
+from app.repositories.autorizaciones import AutorizacionRecolectorRepository
 from app.repositories.recolectores import RecolectorRepository
-from app.schemas import AutorizacionZafraCreate, HabilitarRecolectoresBody
+from app.schemas import HabilitarRecolectoresBody
 
 
-class AutorizacionZafraService:
+class AutorizacionRecolectorService:
     def __init__(self, db: Session):
         self.db = db
-        self.repo = AutorizacionZafraRepository(db)
+        self.repo = AutorizacionRecolectorRepository(db)
         self.rec_repo = RecolectorRepository(db)
-
-    def _get_or_404(self, autorizacion_id: int) -> AutorizacionZafra:
-        obj = self.repo.get_by_id(autorizacion_id)
-        if not obj:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Autorización de zafra {autorizacion_id} no encontrada",
-            )
-        return obj
 
     def _get_recolector_or_404(self, recolector_id: int) -> Recolector:
         rec = self.rec_repo.get_by_id(recolector_id)
@@ -35,82 +24,25 @@ class AutorizacionZafraService:
             )
         return rec
 
-    def get_by_comunidad_cosecha(
-        self, comunidad_id: int, cosecha: int
-    ) -> AutorizacionZafra:
-        obj = self.repo.get_by_comunidad_cosecha(comunidad_id, cosecha)
-        if not obj:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"No existe autorización de zafra para comunidad {comunidad_id} y cosecha {cosecha}",
-            )
-        return obj
-
-    def crear(self, body: AutorizacionZafraCreate, creado_por_id) -> AutorizacionZafra:
-        # Solo puede existir una autorización por comunidad y cosecha
-        existente = self.repo.get_by_comunidad_cosecha(body.comunidad_id, body.cosecha)
-        if existente:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail=f"Ya existe una autorización para la comunidad {body.comunidad_id} y cosecha {body.cosecha}",
-            )
-
-        autorizacion = self.repo.create(
-            comunidad_id=body.comunidad_id,
-            cosecha=body.cosecha,
-            codigo_documento=body.codigo_documento,
-            solicitante=body.solicitante,
-            ci_solicitante=body.ci_solicitante,
-            expediente=body.expediente,
-            fecha_inicio_recoleccion=body.fecha_inicio_recoleccion,
-            fecha_fin_recoleccion=body.fecha_fin_recoleccion,
-            n_dias_recoleccion=body.n_dias_recoleccion,
-            superficie_km2=body.superficie_km2,
-            zona_autorizacion=body.zona_autorizacion,
-            sello_sernap=body.sello_sernap,
-            creado_por=creado_por_id,
-        )
-
-        # Habilitar recolectores incluidos en el body
+    def habilitar(self, body: HabilitarRecolectoresBody) -> list[AutorizacionRecolector]:
+        """Habilita uno o varios recolectores para una comunidad y cosecha. Idempotente."""
         for recolector_id in body.recolector_ids:
             self._get_recolector_or_404(recolector_id)
-            self.repo.habilitar_recolector(autorizacion.id, recolector_id)
+            existente = self.repo.get_by_comunidad_cosecha_recolector(
+                body.comunidad_id, body.cosecha, recolector_id
+            )
+            if not existente:
+                self.repo.habilitar(body.comunidad_id, body.cosecha, recolector_id)
 
         self.db.commit()
-        self.db.refresh(autorizacion)
-        return autorizacion
+        return self.repo.list_by_comunidad_cosecha(body.comunidad_id, body.cosecha)
 
-    def habilitar_recolectores(
-        self, autorizacion_id: int, body: HabilitarRecolectoresBody, creado_por_id
-    ) -> AutorizacionZafra:
-        autorizacion = self._get_or_404(autorizacion_id)
-
-        nuevos = []
-        for recolector_id in body.recolector_ids:
-            self._get_recolector_or_404(recolector_id)
-            # Saltar si ya está habilitado
-            if self.repo.get_autorizacion_recolector(autorizacion_id, recolector_id):
-                continue
-            nuevos.append(self.repo.habilitar_recolector(autorizacion_id, recolector_id))
-
-        self.db.commit()
-        self.db.refresh(autorizacion)
-        return autorizacion
-
-    def listar_recolectores_habilitados(
-        self, comunidad_id: int, cosecha: int
-    ) -> list:
+    def listar_habilitados(self, comunidad_id: int, cosecha: int) -> list[dict]:
         """
-        Devuelve la lista de recolectores habilitados en la zafra con el badge
-        de estado derivado de sus entregas e items de recepción.
+        Lista de trabajo diario: recolectores habilitados con badge de estado
+        derivado de sus entregas e ítems de recepción.
         """
-        from app.models import EntregaRecolector, ItemRecepcion
-
-        autorizacion = self.repo.get_by_comunidad_cosecha(comunidad_id, cosecha)
-        if not autorizacion:
-            return []
-
-        habilitados = self.repo.list_recolectores_habilitados(autorizacion.id)
+        habilitados = self.repo.list_by_comunidad_cosecha(comunidad_id, cosecha)
         resultado = []
 
         for ar in habilitados:
