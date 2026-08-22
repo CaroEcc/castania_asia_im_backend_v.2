@@ -1,10 +1,14 @@
+import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, get_current_user, require_role, UserRole
-from app.schemas import ComunidadCreate, ComunidadListResponse, ComunidadOut, ComunidadUpdate
+from app.schemas import (
+    ComunidadCreate, ComunidadListResponse, ComunidadOut, ComunidadUpdate,
+    AsignarResponsablesBody, ResponsableComunidadOut,
+)
 from app.services.comunidades import ComunidadService
 
 router = APIRouter(prefix="/comunidades", tags=["Comunidades v1"])
@@ -109,3 +113,44 @@ def cambiar_status(
 def eliminar_comunidad(comunidad_id: int, svc: ComunidadService = Depends(_svc)):
     """Soft delete: pasa la comunidad a estado Inactiva."""
     return svc.eliminar(comunidad_id)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/comunidades/{id}/responsables  — cualquier JWT válido
+# ---------------------------------------------------------------------------
+
+@router.get("/{comunidad_id}/responsables", response_model=list[ResponsableComunidadOut],
+            dependencies=[Depends(get_current_user)])
+def listar_responsables(comunidad_id: int, svc: ComunidadService = Depends(_svc)):
+    """Lista los responsables de acopio asignados a una comunidad."""
+    return svc.listar_responsables(comunidad_id)
+
+
+# ---------------------------------------------------------------------------
+# POST /api/v1/comunidades/{id}/responsables  — solo administrador
+# ---------------------------------------------------------------------------
+
+@router.post("/{comunidad_id}/responsables", response_model=list[ResponsableComunidadOut],
+             status_code=status.HTTP_201_CREATED, dependencies=[_solo_admin])
+def asignar_responsables(
+    comunidad_id: int,
+    body: AsignarResponsablesBody,
+    svc: ComunidadService = Depends(_svc),
+):
+    """Asigna uno o más responsables de acopio a la comunidad. Los ya asignados se ignoran."""
+    return svc.asignar_responsables(comunidad_id, body.usuario_ids)
+
+
+# ---------------------------------------------------------------------------
+# DELETE /api/v1/comunidades/{id}/responsables/{usuario_id}  — solo administrador
+# ---------------------------------------------------------------------------
+
+@router.delete("/{comunidad_id}/responsables/{usuario_id}", status_code=status.HTTP_204_NO_CONTENT,
+               dependencies=[_solo_admin])
+def desasignar_responsable(
+    comunidad_id: int,
+    usuario_id: uuid.UUID,
+    svc: ComunidadService = Depends(_svc),
+):
+    """Elimina la asignación de un responsable a una comunidad."""
+    svc.desasignar_responsable(comunidad_id, usuario_id)

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import uuid as _uuid
 from typing import Optional
 
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models import Comunidad
+from app.models import Comunidad, UsuarioSistema, responsable_comunidad
 
 
 class ComunidadRepository:
@@ -81,3 +82,45 @@ class ComunidadRepository:
             .all()
         )
         return {status: count for status, count in rows}
+
+    # ------------------------------------------------------------------
+    # Responsables de comunidad (M:N)
+    # ------------------------------------------------------------------
+
+    def get_responsables(self, comunidad_id: int) -> list[UsuarioSistema]:
+        return (
+            self.db.query(UsuarioSistema)
+            .join(responsable_comunidad, UsuarioSistema.id == responsable_comunidad.c.usuario_id)
+            .filter(responsable_comunidad.c.comunidad_id == comunidad_id)
+            .order_by(UsuarioSistema.nombre_completo)
+            .all()
+        )
+
+    def is_responsable_assigned(self, comunidad_id: int, usuario_id: _uuid.UUID) -> bool:
+        row = self.db.execute(
+            responsable_comunidad.select().where(
+                responsable_comunidad.c.comunidad_id == comunidad_id,
+                responsable_comunidad.c.usuario_id == usuario_id,
+            )
+        ).first()
+        return row is not None
+
+    def asignar_responsable(self, comunidad_id: int, usuario_id: _uuid.UUID) -> None:
+        if not self.is_responsable_assigned(comunidad_id, usuario_id):
+            self.db.execute(
+                responsable_comunidad.insert().values(
+                    comunidad_id=comunidad_id,
+                    usuario_id=usuario_id,
+                )
+            )
+            self.db.commit()
+
+    def desasignar_responsable(self, comunidad_id: int, usuario_id: _uuid.UUID) -> bool:
+        result = self.db.execute(
+            responsable_comunidad.delete().where(
+                responsable_comunidad.c.comunidad_id == comunidad_id,
+                responsable_comunidad.c.usuario_id == usuario_id,
+            )
+        )
+        self.db.commit()
+        return result.rowcount > 0

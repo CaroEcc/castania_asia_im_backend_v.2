@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import uuid
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models import Comunidad
+from app.models import Comunidad, UsuarioSistema
 from app.repositories.comunidades import ComunidadRepository
 from app.schemas import ComunidadCreate, ComunidadUpdate
 
@@ -113,6 +114,45 @@ class ComunidadService:
             {"value": c.id_comunidad, "label": c.nombre, "abreviacion": c.abreviacion}
             for c in self.repo.list_activas()
         ]
+
+    # ------------------------------------------------------------------
+    # Responsables de comunidad
+    # ------------------------------------------------------------------
+
+    def listar_responsables(self, comunidad_id: int) -> list[UsuarioSistema]:
+        self._get_or_404(comunidad_id)
+        return self.repo.get_responsables(comunidad_id)
+
+    def asignar_responsables(self, comunidad_id: int, usuario_ids: list[uuid.UUID]) -> list[UsuarioSistema]:
+        self._get_or_404(comunidad_id)
+
+        for usuario_id in usuario_ids:
+            usuario = self.repo.db.query(UsuarioSistema).filter(
+                UsuarioSistema.id == usuario_id,
+                UsuarioSistema.activo == True,
+            ).first()
+            if not usuario:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail=f"Usuario {usuario_id} no encontrado o inactivo",
+                )
+            if usuario.rol != "responsable_acopio":
+                raise HTTPException(
+                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                    detail=f"El usuario '{usuario.username}' no tiene rol responsable_acopio (tiene: {usuario.rol})",
+                )
+            self.repo.asignar_responsable(comunidad_id, usuario_id)
+
+        return self.repo.get_responsables(comunidad_id)
+
+    def desasignar_responsable(self, comunidad_id: int, usuario_id: uuid.UUID) -> None:
+        self._get_or_404(comunidad_id)
+        removed = self.repo.desasignar_responsable(comunidad_id, usuario_id)
+        if not removed:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"El usuario {usuario_id} no está asignado a esta comunidad",
+            )
 
     def estadisticas(self) -> dict:
         conteo = self.repo.count_by_status()

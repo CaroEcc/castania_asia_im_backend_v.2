@@ -1,3 +1,5 @@
+import uuid
+
 from pydantic import BaseModel, Field, model_validator
 from datetime import datetime
 from typing import Optional, List
@@ -271,6 +273,19 @@ class ComunidadListResponse(BaseModel):
     comunidades: List[ComunidadOut]
 
 
+class ResponsableComunidadOut(BaseModel):
+    usuario_id: uuid.UUID
+    nombre_completo: str
+    username: str
+
+    class Config:
+        from_attributes = True
+
+
+class AsignarResponsablesBody(BaseModel):
+    usuario_ids: List[uuid.UUID] = Field(..., min_length=1, description="UUIDs de usuarios con rol responsable_acopio")
+
+
 # =============================================================================
 # SCHEMAS PARA ROLES
 # =============================================================================
@@ -289,7 +304,6 @@ class RolOut(BaseModel):
 # SCHEMAS — MÓDULO 1: RECOLECTORES (Área A)
 # =============================================================================
 
-import uuid
 from datetime import date, time
 
 
