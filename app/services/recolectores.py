@@ -165,12 +165,11 @@ class RecolectorService:
 
     def get_habilitacion_vigente(self, usuario_id) -> AutorizacionRecolector:
         rec = self.obtener_por_usuario(usuario_id)
-        cosecha_actual = datetime.utcnow().year
-        habilitacion = self.repo.get_habilitacion_vigente(rec.id, cosecha_actual)
+        habilitacion = self.repo.get_habilitacion_vigente(rec.id)
         if not habilitacion:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Sin habilitación vigente para la cosecha {cosecha_actual}",
+                detail="Sin habilitación vigente para este recolector",
             )
         return habilitacion
 

@@ -94,14 +94,11 @@ class RecolectorRepository:
     # Habilitación vigente
     # ------------------------------------------------------------------
 
-    def get_habilitacion_vigente(
-        self, recolector_id: int, cosecha: int
-    ) -> Optional[AutorizacionRecolector]:
+    def get_habilitacion_vigente(self, recolector_id: int) -> Optional[AutorizacionRecolector]:
+        """Retorna la habilitación más reciente del recolector (la del último lote)."""
         return (
             self.db.query(AutorizacionRecolector)
-            .filter(
-                AutorizacionRecolector.recolector_id == recolector_id,
-                AutorizacionRecolector.cosecha == cosecha,
-            )
+            .filter(AutorizacionRecolector.recolector_id == recolector_id)
+            .order_by(AutorizacionRecolector.id.desc())
             .first()
         )

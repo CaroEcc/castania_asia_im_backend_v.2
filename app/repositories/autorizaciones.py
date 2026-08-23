@@ -16,33 +16,24 @@ class AutorizacionRecolectorRepository:
             AutorizacionRecolector.id == autorizacion_id
         ).first()
 
-    def get_by_comunidad_cosecha_recolector(
-        self, comunidad_id: int, cosecha: int, recolector_id: int
+    def get_by_lote_recolector(
+        self, lote_id: int, recolector_id: int
     ) -> Optional[AutorizacionRecolector]:
         return self.db.query(AutorizacionRecolector).filter(
-            AutorizacionRecolector.comunidad_id == comunidad_id,
-            AutorizacionRecolector.cosecha == cosecha,
+            AutorizacionRecolector.lote_materia_prima_id == lote_id,
             AutorizacionRecolector.recolector_id == recolector_id,
         ).first()
 
-    def list_by_comunidad_cosecha(
-        self, comunidad_id: int, cosecha: int
-    ) -> list[AutorizacionRecolector]:
+    def list_by_lote(self, lote_id: int) -> list[AutorizacionRecolector]:
         return (
             self.db.query(AutorizacionRecolector)
-            .filter(
-                AutorizacionRecolector.comunidad_id == comunidad_id,
-                AutorizacionRecolector.cosecha == cosecha,
-            )
+            .filter(AutorizacionRecolector.lote_materia_prima_id == lote_id)
             .all()
         )
 
-    def habilitar(
-        self, comunidad_id: int, cosecha: int, recolector_id: int
-    ) -> AutorizacionRecolector:
+    def habilitar(self, lote_id: int, recolector_id: int) -> AutorizacionRecolector:
         ar = AutorizacionRecolector(
-            comunidad_id=comunidad_id,
-            cosecha=cosecha,
+            lote_materia_prima_id=lote_id,
             recolector_id=recolector_id,
         )
         self.db.add(ar)

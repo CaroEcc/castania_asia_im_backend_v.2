@@ -269,24 +269,23 @@ class Recolector(AuditMixin, Base):
 class AutorizacionRecolector(AuditMixin, Base):
     """
     Tabla: autorizaciones_recolector
-    Habilita a un recolector para una campaña de recolección (comunidad + cosecha).
-    Reemplaza la relación previa con AutorizacionZafra — la habilitación se registra
-    directamente sin necesidad de un documento cabecera.
+    Habilita a un recolector para un lote de acopio específico.
+    Cada lote tiene su propia lista de recolectores habilitados — al cerrar el lote
+    la habilitación queda archivada y el siguiente lote empieza vacío.
     """
     __tablename__ = "autorizaciones_recolector"
     __table_args__ = (
-        UniqueConstraint("comunidad_id", "cosecha", "recolector_id", name="uq_autorizacion_recolector"),
+        UniqueConstraint("lote_materia_prima_id", "recolector_id", name="uq_autorizacion_recolector"),
     )
 
     id = Column(Integer, primary_key=True, autoincrement=True)
 
-    comunidad_id = Column(Integer, ForeignKey("comunidades.id_comunidad"), nullable=False)
-    cosecha = Column(Integer, nullable=False)               # año de campaña, ej: 2026
+    lote_materia_prima_id = Column(Integer, ForeignKey("lotes_materia_prima.id"), nullable=False)
     recolector_id = Column(Integer, ForeignKey("recolectores.id"), nullable=False)
     estado_recoleccion = Column(String(100), nullable=True)
 
     # Relaciones
-    comunidad = relationship("Comunidad")
+    lote_materia_prima = relationship("LoteMateriaPrima")
     recolector = relationship("Recolector", back_populates="autorizaciones")
     items_recepcion = relationship("ItemRecepcion", back_populates="autorizacion_recolector")
 

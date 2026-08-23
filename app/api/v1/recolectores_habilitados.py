@@ -23,14 +23,14 @@ def _svc(db: Session = Depends(get_db)) -> AutorizacionRecolectorService:
 
 # ---------------------------------------------------------------------------
 # POST /api/v1/autorizaciones-zafra/recolectores
-# Habilita uno o varios recolectores para una comunidad y cosecha.
+# Habilita uno o varios recolectores en el lote activo.
 # ---------------------------------------------------------------------------
 
 @router.post(
     "/recolectores",
     response_model=List[AutorizacionRecolectorOut],
     status_code=201,
-    summary="Habilitar recolectores para una comunidad y cosecha",
+    summary="Habilitar recolectores para el lote activo",
     dependencies=[_roles_permitidos],
 )
 def habilitar_recolectores(
@@ -41,7 +41,7 @@ def habilitar_recolectores(
 
 
 # ---------------------------------------------------------------------------
-# GET /api/v1/autorizaciones-zafra/recolectores-habilitados
+# GET /api/v1/autorizaciones-zafra/recolectores-habilitados?lote_id=X
 # Lista de trabajo diario con badge de estado por recolector.
 # ---------------------------------------------------------------------------
 
@@ -49,11 +49,10 @@ def habilitar_recolectores(
     "/recolectores-habilitados",
     response_model=List[dict],
     dependencies=[_roles_permitidos],
-    summary="Lista de recolectores habilitados con estado de entrega",
+    summary="Lista de recolectores habilitados en el lote con estado de entrega",
 )
 def recolectores_habilitados(
-    comunidad_id: int = Query(...),
-    cosecha: int = Query(..., ge=2000, le=2100),
+    lote_id: int = Query(..., description="ID del lote de acopio activo"),
     svc: AutorizacionRecolectorService = Depends(_svc),
 ):
-    return svc.listar_habilitados(comunidad_id, cosecha)
+    return svc.listar_habilitados(lote_id)

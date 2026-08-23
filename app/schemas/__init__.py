@@ -459,15 +459,13 @@ class EntregaListResponse(BaseModel):
 # =============================================================================
 
 class HabilitarRecolectoresBody(BaseModel):
-    comunidad_id: int
-    cosecha: int = Field(..., ge=2000, le=2100, description="Año de campaña, ej: 2026")
+    lote_id: int = Field(..., description="ID del lote de acopio activo")
     recolector_ids: List[int] = Field(..., min_length=1, description="IDs de recolectores a habilitar")
 
 
 class AutorizacionRecolectorOut(BaseModel):
     id: int
-    comunidad_id: int
-    cosecha: int
+    lote_materia_prima_id: int
     recolector_id: int
     estado_recoleccion: Optional[str]
 
