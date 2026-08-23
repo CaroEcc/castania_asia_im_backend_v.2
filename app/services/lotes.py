@@ -5,7 +5,7 @@ from datetime import datetime
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
-from app.models import LoteMateriaPrima
+from app.models import EntregaRecolector, ItemRecepcion, LoteMateriaPrima
 from app.repositories.lotes import LoteMateriaPrimaRepository
 from app.schemas import LoteMateriaPrimaCreate, CerrarLoteBody, RechazarLoteBody
 
@@ -78,6 +78,21 @@ class LoteMateriaPrimaService:
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="No se puede cerrar un lote sin recepciones (total_kg == 0)",
             )
+
+        # Marcar como procesadas las EntregaRecolector vinculadas a este lote.
+        # Esto impide que vuelvan a aparecer como pendientes en futuros lotes.
+        entrega_ids = (
+            self.db.query(ItemRecepcion.entrega_recolector_id)
+            .filter(
+                ItemRecepcion.lote_materia_prima_id == lote_id,
+                ItemRecepcion.entrega_recolector_id.isnot(None),
+            )
+            .subquery()
+        )
+        self.db.query(EntregaRecolector).filter(
+            EntregaRecolector.id.in_(entrega_ids)
+        ).update({"estado_recepcion": "procesado"}, synchronize_session=False)
+
         return self.repo.update(
             lote,
             estado="cerrado",

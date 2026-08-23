@@ -26,7 +26,7 @@ class ItemRecepcionRepository:
         )
 
     def get_entregas_sin_recepcion(self, recolector_id: int) -> list[EntregaRecolector]:
-        """Entregas del recolector que aún no tienen ItemRecepcion vinculado."""
+        """Entregas del recolector que aún no tienen ItemRecepcion vinculado ni fueron procesadas."""
         vinculadas = (
             self.db.query(ItemRecepcion.entrega_recolector_id)
             .filter(ItemRecepcion.entrega_recolector_id.isnot(None))
@@ -37,6 +37,7 @@ class ItemRecepcionRepository:
             .filter(
                 EntregaRecolector.recolector_id == recolector_id,
                 EntregaRecolector.id.not_in(vinculadas),
+                EntregaRecolector.estado_recepcion.isnot("procesado"),
             )
             .order_by(EntregaRecolector.id.desc())
             .all()
