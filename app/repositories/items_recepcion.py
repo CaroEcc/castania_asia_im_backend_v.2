@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Optional
 
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models import EntregaRecolector, ItemRecepcion
@@ -26,7 +27,12 @@ class ItemRecepcionRepository:
         )
 
     def get_entregas_sin_recepcion(self, recolector_id: int) -> list[EntregaRecolector]:
-        """Entregas del recolector que aún no tienen ItemRecepcion vinculado ni fueron procesadas."""
+        """Entregas del recolector que aún no tienen ItemRecepcion vinculado ni fueron procesadas.
+
+        Incluye entradas con estado_recepcion = NULL (nuevas del recolector) y las que
+        no están en estado 'procesado'. NULL debe tratarse explícitamente porque
+        NULL != 'procesado' evalúa a NULL (falso) en SQL.
+        """
         vinculadas = (
             self.db.query(ItemRecepcion.entrega_recolector_id)
             .filter(ItemRecepcion.entrega_recolector_id.isnot(None))
@@ -37,7 +43,10 @@ class ItemRecepcionRepository:
             .filter(
                 EntregaRecolector.recolector_id == recolector_id,
                 EntregaRecolector.id.not_in(vinculadas),
-                EntregaRecolector.estado_recepcion.isnot("procesado"),
+                or_(
+                    EntregaRecolector.estado_recepcion.is_(None),
+                    EntregaRecolector.estado_recepcion != "procesado",
+                ),
             )
             .order_by(EntregaRecolector.id.desc())
             .all()
