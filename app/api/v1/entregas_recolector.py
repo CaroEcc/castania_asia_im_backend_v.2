@@ -38,6 +38,25 @@ def sincronizar_entrega(
 
 
 # ---------------------------------------------------------------------------
+# GET /api/v1/entregas-recolector/{entrega_id}
+#   El recolector consulta el detalle de una de sus propias entregas.
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/{entrega_id}",
+    response_model=EntregaRecolectorOut,
+    summary="Obtener detalle de una entrega del recolector autenticado",
+)
+def obtener_entrega(
+    entrega_id: int,
+    svc: RecolectorService = Depends(_svc),
+    current_user=Depends(require_role(UserRole.recolector)),
+):
+    recolector = svc.obtener_por_usuario(current_user.id)
+    return svc.obtener_entrega(entrega_id, recolector.id)
+
+
+# ---------------------------------------------------------------------------
 # GET /api/v1/entregas-recolector/{entrega_id}/parcela
 #   Retorna la parcela (con su polígono GPS) asociada a una entrega.
 #   Usada para cargar los puntos de la parcela en un mapa.

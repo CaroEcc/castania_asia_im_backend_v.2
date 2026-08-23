@@ -183,6 +183,20 @@ class RecolectorService:
         self._get_or_404(recolector_id)
         return self.repo.list_entregas(recolector_id)
 
+    def obtener_entrega(self, entrega_id: int, recolector_id: int) -> EntregaRecolector:
+        entrega = self.repo.get_entrega_by_id(entrega_id)
+        if not entrega:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Entrega {entrega_id} no encontrada",
+            )
+        if entrega.recolector_id != recolector_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tiene permiso para ver esta entrega",
+            )
+        return entrega
+
     def get_parcela_de_entrega(self, entrega_id: int):
         entrega = self.repo.get_entrega_by_id(entrega_id)
         if not entrega:
