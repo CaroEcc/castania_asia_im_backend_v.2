@@ -64,6 +64,15 @@ class ParcelaService:
             )
         return parcela
 
+    def obtener(self, parcela_id: int, recolector_id: int) -> Parcela:
+        parcela = self._get_or_404(parcela_id)
+        if parcela.recolector_id != recolector_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tiene permiso para ver esta parcela",
+            )
+        return parcela
+
     def listar(self, recolector_id: int, estado: Optional[str]) -> list[Parcela]:
         if estado and estado not in _ESTADOS_VALIDOS:
             raise HTTPException(

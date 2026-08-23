@@ -38,6 +38,25 @@ def crear_parcela(
 
 
 # ---------------------------------------------------------------------------
+# GET /api/v1/parcelas/{id}  — recolector consulta su parcela (polígono GPS)
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/{parcela_id}",
+    response_model=ParcelaOut,
+    summary="Obtener polígono GPS de una parcela del recolector autenticado",
+)
+def obtener_parcela(
+    parcela_id: int,
+    svc: ParcelaService = Depends(_svc),
+    rec_svc: RecolectorService = Depends(_rec_svc),
+    current_user=Depends(require_role(UserRole.recolector)),
+):
+    recolector = rec_svc.obtener_por_usuario(current_user.id)
+    return svc.obtener(parcela_id, recolector.id)
+
+
+# ---------------------------------------------------------------------------
 # PATCH /api/v1/parcelas/{id}  — recolector edita o desactiva su parcela
 # ---------------------------------------------------------------------------
 

@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.security import get_password_hash
 from app.models import AutorizacionRecolector, Comunidad, Recolector, EntregaRecolector, UsuarioSistema
 from app.repositories.recolectores import RecolectorRepository
+from app.repositories.parcelas import ParcelaRepository
 from app.schemas import RecolectorCreate, RecolectorUpdate, EntregaRecolectorCreate
 
 _ROL_RECOLECTOR = "recolector"
@@ -23,6 +24,7 @@ class RecolectorService:
     def __init__(self, db: Session):
         self.db = db
         self.repo = RecolectorRepository(db)
+        self.parcela_repo = ParcelaRepository(db)
 
     # ------------------------------------------------------------------
     # Helpers privados
@@ -180,6 +182,26 @@ class RecolectorService:
     def listar_entregas(self, recolector_id: int) -> list[EntregaRecolector]:
         self._get_or_404(recolector_id)
         return self.repo.list_entregas(recolector_id)
+
+    def get_parcela_de_entrega(self, entrega_id: int):
+        entrega = self.repo.get_entrega_by_id(entrega_id)
+        if not entrega:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Entrega {entrega_id} no encontrada",
+            )
+        if not entrega.parcela_id:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"La entrega {entrega_id} no tiene parcela asociada",
+            )
+        parcela = self.parcela_repo.get_by_id(entrega.parcela_id)
+        if not parcela:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Parcela {entrega.parcela_id} no encontrada",
+            )
+        return parcela
 
     def crear_entrega(
         self,

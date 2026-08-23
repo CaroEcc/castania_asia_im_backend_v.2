@@ -75,6 +75,13 @@ class RecolectorRepository:
     # EntregaRecolector
     # ------------------------------------------------------------------
 
+    def get_entrega_by_id(self, entrega_id: int) -> Optional[EntregaRecolector]:
+        return (
+            self.db.query(EntregaRecolector)
+            .filter(EntregaRecolector.id == entrega_id)
+            .first()
+        )
+
     def list_entregas(self, recolector_id: int) -> list[EntregaRecolector]:
         return (
             self.db.query(EntregaRecolector)
