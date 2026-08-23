@@ -36,6 +36,23 @@ def listar_despachos(
 
 
 # ---------------------------------------------------------------------------
+# GET /api/v1/despachos/{id}
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "/{despacho_id}",
+    response_model=DespachoOut,
+    summary="Obtener despacho por ID",
+)
+def obtener_despacho(
+    despacho_id: int,
+    current_user=Depends(require_role(UserRole.operador_planta, UserRole.administrador)),
+    svc: DespachoService = Depends(_svc),
+):
+    return svc.get_by_id(despacho_id)
+
+
+# ---------------------------------------------------------------------------
 # POST /api/v1/despachos
 # ---------------------------------------------------------------------------
 

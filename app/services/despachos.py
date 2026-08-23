@@ -20,6 +20,15 @@ class DespachoService:
     def listar(self) -> list[Despacho]:
         return self.repo.list()
 
+    def get_by_id(self, despacho_id: int) -> Despacho:
+        despacho = self.repo.get_by_id(despacho_id)
+        if not despacho:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Despacho {despacho_id} no encontrado",
+            )
+        return despacho
+
     def crear(self, body: DespachoCreate, responsable_id) -> Despacho:
         precio_bs_kg = body.precio_bs_kg or Decimal("0")
 
