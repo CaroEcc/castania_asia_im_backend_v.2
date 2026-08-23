@@ -12,6 +12,9 @@ class DespachoRepository:
     def __init__(self, db: Session):
         self.db = db
 
+    def list(self) -> list[Despacho]:
+        return self.db.query(Despacho).order_by(Despacho.id.desc()).all()
+
     def get_by_id(self, despacho_id: int) -> Optional[Despacho]:
         return (
             self.db.query(Despacho)

@@ -17,6 +17,9 @@ class DespachoService:
         self.repo = DespachoRepository(db)
         self.lpt_repo = LoteProductoTerminadoRepository(db)
 
+    def listar(self) -> list[Despacho]:
+        return self.repo.list()
+
     def crear(self, body: DespachoCreate, responsable_id) -> Despacho:
         precio_bs_kg = body.precio_bs_kg or Decimal("0")
 

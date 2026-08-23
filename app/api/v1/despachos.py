@@ -4,6 +4,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, require_role, UserRole
+from typing import List
+
 from app.schemas import DespachoCreate, DespachoOut, RecepcionDestinoBody
 from app.services.despachos import DespachoService
 
@@ -15,6 +17,22 @@ router = APIRouter(
 
 def _svc(db: Session = Depends(get_db)) -> DespachoService:
     return DespachoService(db)
+
+
+# ---------------------------------------------------------------------------
+# GET /api/v1/despachos
+# ---------------------------------------------------------------------------
+
+@router.get(
+    "",
+    response_model=List[DespachoOut],
+    summary="Listar despachos",
+)
+def listar_despachos(
+    current_user=Depends(require_role(UserRole.operador_planta, UserRole.administrador)),
+    svc: DespachoService = Depends(_svc),
+):
+    return svc.listar()
 
 
 # ---------------------------------------------------------------------------
