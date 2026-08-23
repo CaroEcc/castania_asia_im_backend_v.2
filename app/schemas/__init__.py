@@ -929,3 +929,136 @@ class DespachoOut(BaseModel):
     items: List[ItemDespachoOut] = []
     class Config:
         from_attributes = True
+
+
+# =============================================================================
+# SCHEMAS — ADMINISTRADOR
+# =============================================================================
+
+class ResumenEstadosLotesMP(BaseModel):
+    abierto: int = 0
+    cerrado: int = 0
+    en_limpieza: int = 0
+    en_ablandamiento: int = 0
+    en_elaboracion: int = 0
+    completado: int = 0
+    rechazado: int = 0
+
+
+class ResumenEstadosLPT(BaseModel):
+    en_proceso: int = 0
+    choque_termico: int = 0
+    camara_frio: int = 0
+    parcialmente_despachado: int = 0
+    despachado: int = 0
+
+
+class AdminResumenOut(BaseModel):
+    lotes_materia_prima: ResumenEstadosLotesMP
+    lotes_producto_terminado: ResumenEstadosLPT
+    total_recolectores_activos: int
+    total_despachos: int
+    stock_camara_frio_kg: Optional[Decimal] = None
+
+
+class LotePipelineOut(BaseModel):
+    id: int
+    numero_lote: str
+    comunidad_id: int
+    comunidad_nombre: str
+    responsable_id: uuid.UUID
+    responsable_nombre: str
+    es_organico: bool
+    fruto: str
+    fecha_apertura: datetime
+    fecha_cierre: Optional[datetime]
+    total_kg: Decimal
+    total_bs: Decimal
+    estado: str
+    vobo_control: bool
+    vobo_planta: bool
+    total_recepciones: int = 0
+
+    @model_validator(mode="before")
+    @classmethod
+    def _extract_lote_names(cls, data):
+        if hasattr(data, "comunidad") and data.comunidad is not None:
+            data.__dict__["comunidad_nombre"] = data.comunidad.nombre
+        if hasattr(data, "responsable") and data.responsable is not None:
+            data.__dict__["responsable_nombre"] = data.responsable.nombre_completo
+        if hasattr(data, "items_recepcion"):
+            data.__dict__["total_recepciones"] = len(data.items_recepcion)
+        return data
+
+    class Config:
+        from_attributes = True
+
+
+class AdminPipelineOut(BaseModel):
+    total: int
+    lotes: List[LotePipelineOut]
+
+
+class AcopioResumenComunidad(BaseModel):
+    comunidad_id: int
+    comunidad_nombre: str
+    total_lotes: int
+    total_recepciones: int
+    total_kg: Decimal
+    total_bs: Decimal
+
+
+class AdminReporteAcopioOut(BaseModel):
+    fecha_desde: Optional[date] = None
+    fecha_hasta: Optional[date] = None
+    total_kg: Decimal
+    total_bs: Decimal
+    total_recepciones: int
+    por_comunidad: List[AcopioResumenComunidad]
+
+
+class ProduccionTipoPulpa(BaseModel):
+    tipo_pulpa: str
+    total_lotes: int
+    total_kg_fruto: Optional[Decimal]
+    total_kg_pulpa: Optional[Decimal]
+    rendimiento_promedio_pct: Optional[Decimal]
+    stock_actual_kg: Optional[Decimal]
+
+
+class AdminReporteProduccionOut(BaseModel):
+    fecha_desde: Optional[date] = None
+    fecha_hasta: Optional[date] = None
+    por_tipo_pulpa: List[ProduccionTipoPulpa]
+    total_kg_fruto: Optional[Decimal]
+    total_kg_pulpa: Optional[Decimal]
+
+
+class AdminReporteDespachosOut(BaseModel):
+    fecha_desde: Optional[date] = None
+    fecha_hasta: Optional[date] = None
+    total_despachos: int
+    total_kg: Optional[Decimal]
+    total_bs: Optional[Decimal]
+    despachos: List[DespachoOut]
+
+
+class TrazabilidadItemRecepcionOut(BaseModel):
+    id: int
+    recolector_id: int
+    recolector_nombre: str
+    recolector_codigo: str
+    peso_kg: Decimal
+    precio_bs_kg: Decimal
+    precio_total_bs: Decimal
+    fecha_entrega: Optional[date] = None
+
+
+class TrazabilidadLoteOut(BaseModel):
+    lote: LoteMateriaPrimaOut
+    comunidad_nombre: str
+    responsable_nombre: str
+    recepciones: List[TrazabilidadItemRecepcionOut]
+    proceso_limpieza: Optional[ProcesoLimpiezaOut] = None
+    proceso_ablandamiento: Optional[ProcesoAblandamientoOut] = None
+    proceso_elaboracion: Optional[ProcesoElaboracionOut] = None

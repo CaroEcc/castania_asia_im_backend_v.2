@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
+    admin,
     auth,
     comunidades,
     roles,
@@ -36,3 +37,4 @@ router.include_router(camara_frio.router)
 router.include_router(matrices.router)
 router.include_router(despachos.router)
 router.include_router(usuarios.router)
+router.include_router(admin.router)

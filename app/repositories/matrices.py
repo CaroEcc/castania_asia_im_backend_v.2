@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Optional
+
 from sqlalchemy.orm import Session
 
 from app.models import MatrizProcesos, ItemMatrizProcesos
@@ -9,6 +11,13 @@ from app.schemas import MatrizProcesosCreate
 class MatrizProcesosRepository:
     def __init__(self, db: Session):
         self.db = db
+
+    def get_by_lpt(self, lpt_id: int) -> Optional[MatrizProcesos]:
+        return (
+            self.db.query(MatrizProcesos)
+            .filter(MatrizProcesos.lote_producto_terminado_id == lpt_id)
+            .first()
+        )
 
     def create(
         self,
