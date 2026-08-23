@@ -16,6 +16,7 @@ from app.services.lotes import LoteMateriaPrimaService
 router = APIRouter(prefix="/lotes-materia-prima", tags=["Módulo 2 — Lotes de materia prima"])
 
 _roles_acopio = Depends(require_role(UserRole.responsable_acopio, UserRole.administrador))
+_roles_lectura = Depends(require_role(UserRole.responsable_acopio, UserRole.operador_planta, UserRole.administrador))
 
 
 def _svc(db: Session = Depends(get_db)) -> LoteMateriaPrimaService:
@@ -47,7 +48,7 @@ def lote_activo(
     "",
     response_model=LoteListResponse,
     summary="Historial de lotes con filtros",
-    dependencies=[_roles_acopio],
+    dependencies=[_roles_lectura],
 )
 def listar_lotes(
     comunidad_id: Optional[int] = Query(None),
@@ -84,7 +85,7 @@ def abrir_lote(
     "/{lote_id}",
     response_model=LoteMateriaPrimaOut,
     summary="Detalle de un lote",
-    dependencies=[_roles_acopio],
+    dependencies=[_roles_lectura],
 )
 def obtener_lote(
     lote_id: int,
