@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import HTTPException, status
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 from app.models import AutorizacionRecolector, EntregaRecolector, ItemRecepcion, Recolector, LoteMateriaPrima
@@ -62,59 +63,60 @@ class AutorizacionRecolectorService:
         for ar in habilitados:
             rec = ar.recolector
 
-            # Última entrega del recolector
-            entrega = (
-                self.db.query(EntregaRecolector)
-                .filter(EntregaRecolector.recolector_id == rec.id)
-                .order_by(EntregaRecolector.id.desc())
+            # ¿Existe ItemRecepcion para este recolector en este lote?
+            item = (
+                self.db.query(ItemRecepcion)
+                .filter(
+                    ItemRecepcion.recolector_id == rec.id,
+                    ItemRecepcion.lote_materia_prima_id == lote_id,
+                )
                 .first()
             )
 
-            # Badge de estado — busca ItemRecepcion en este lote específico
-            if entrega is None:
-                badge = "sin_datos"
-            else:
-                item = (
-                    self.db.query(ItemRecepcion)
-                    .filter(
-                        ItemRecepcion.entrega_recolector_id == entrega.id,
-                        ItemRecepcion.lote_materia_prima_id == lote_id,
-                    )
-                    .first()
+            # Entregas disponibles: sin ItemRecepcion vinculado y no procesadas
+            vinculadas_ids = (
+                self.db.query(ItemRecepcion.entrega_recolector_id)
+                .filter(ItemRecepcion.entrega_recolector_id.isnot(None))
+                .subquery()
+            )
+            entregas_disponibles = (
+                self.db.query(EntregaRecolector)
+                .filter(
+                    EntregaRecolector.recolector_id == rec.id,
+                    EntregaRecolector.id.not_in(vinculadas_ids),
+                    or_(
+                        EntregaRecolector.estado_recepcion.is_(None),
+                        EntregaRecolector.estado_recepcion != "procesado",
+                    ),
                 )
-                if item is None:
-                    # También puede haber recepción sin entrega vinculada
-                    item = (
-                        self.db.query(ItemRecepcion)
-                        .filter(
-                            ItemRecepcion.recolector_id == rec.id,
-                            ItemRecepcion.lote_materia_prima_id == lote_id,
-                        )
-                        .first()
-                    )
+                .order_by(EntregaRecolector.id.desc())
+                .all()
+            )
+            entregas_pendientes_count = len(entregas_disponibles)
+            ultima_entrega = entregas_disponibles[0] if entregas_disponibles else None
 
-                if item is None:
-                    badge = "pendiente"
-                elif item.firma_entrega:
-                    badge = "recibido"
-                else:
-                    badge = "rechazado"
+            if item is not None:
+                # Ya tiene recepción registrada en este lote
+                badge = "recibido" if item.firma_entrega else "rechazado"
+            else:
+                badge = "pendiente" if ultima_entrega is not None else "sin_datos"
 
             resultado.append({
                 "id": rec.id,
                 "codigo": rec.codigo,
                 "nombre_completo": rec.nombre_completo,
                 "autorizacion_recolector_id": ar.id,
-                "ultima_entrega_id": entrega.id if entrega else None,
-                "fecha_recoleccion": entrega.fecha_recoleccion if entrega else None,
-                "fecha_entrega": entrega.fecha_entrega if entrega else None,
-                "tipo_envase": entrega.tipo_envase if entrega else None,
-                "peso_kg": entrega.peso_kg if entrega else None,
-                "hora_cosecha": str(entrega.hora_cosecha) if entrega and entrega.hora_cosecha else None,
-                "hora_recepcion": str(entrega.hora_recepcion) if entrega and entrega.hora_recepcion else None,
-                "medio_transporte": entrega.medio_transporte if entrega else None,
-                "estado_recepcion": entrega.estado_recepcion if entrega else None,
-                "observaciones": entrega.observaciones if entrega else None,
+                # Datos de la entrega más reciente disponible (o None si badge = sin_datos/recibido)
+                "entregas_pendientes_count": entregas_pendientes_count,
+                "ultima_entrega_id": ultima_entrega.id if ultima_entrega else None,
+                "fecha_recoleccion": ultima_entrega.fecha_recoleccion if ultima_entrega else None,
+                "fecha_entrega": ultima_entrega.fecha_entrega if ultima_entrega else None,
+                "tipo_envase": ultima_entrega.tipo_envase if ultima_entrega else None,
+                "peso_kg": ultima_entrega.peso_kg if ultima_entrega else None,
+                "hora_cosecha": str(ultima_entrega.hora_cosecha) if ultima_entrega and ultima_entrega.hora_cosecha else None,
+                "hora_recepcion": str(ultima_entrega.hora_recepcion) if ultima_entrega and ultima_entrega.hora_recepcion else None,
+                "medio_transporte": ultima_entrega.medio_transporte if ultima_entrega else None,
+                "observaciones": ultima_entrega.observaciones if ultima_entrega else None,
                 "badge": badge,
             })
 
