@@ -157,21 +157,17 @@ def reporte_despachos(
 # ---------------------------------------------------------------------------
 
 @router.get(
-    "/trazabilidad/lote/{lote_id}",
+    "/trazabilidad/lote/{numero_lote}",
     response_model=TrazabilidadLoteOut,
     summary="Trazabilidad completa de un lote de materia prima",
     dependencies=[_solo_admin],
 )
 def trazabilidad_lote(
-    lote_id: int,
+    numero_lote: str,
     svc: AdminService = Depends(_svc),
 ):
     """
-    Cadena completa de trazabilidad para un lote de materia prima:
-    - Cabecera del lote (comunidad, responsable, totales)
-    - Todas las recepciones individuales (recolector, peso, precio)
-    - Proceso de limpieza (si existe)
-    - Proceso de ablandamiento (si existe)
-    - Proceso de elaboración de pulpa + LPTs generados (si existe)
+    Cadena completa de trazabilidad para un lote de materia prima.
+    Identificador natural: LMP-{YYYYMMDD}-{HHMM}
     """
-    return svc.get_trazabilidad_lote(lote_id)
+    return svc.get_trazabilidad_lote(numero_lote)

@@ -243,16 +243,16 @@ class AdminService:
     # Trazabilidad completa de un lote de materia prima
     # -------------------------------------------------------------------------
 
-    def get_trazabilidad_lote(self, lote_id: int) -> dict:
+    def get_trazabilidad_lote(self, numero_lote: str) -> dict:
         lote = (
             self.db.query(LoteMateriaPrima)
-            .filter(LoteMateriaPrima.id == lote_id)
+            .filter(LoteMateriaPrima.numero_lote == numero_lote)
             .first()
         )
         if not lote:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Lote {lote_id} no encontrado",
+                detail=f"Lote {numero_lote} no encontrado",
             )
 
         recepciones = [
