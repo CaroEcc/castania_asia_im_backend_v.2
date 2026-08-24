@@ -183,7 +183,7 @@ class RecolectorService:
         self._get_or_404(recolector_id)
         return self.repo.list_entregas(recolector_id)
 
-    def obtener_entrega(self, entrega_id: int, recolector_id: int) -> EntregaRecolector:
+    def obtener_entrega(self, entrega_id: int, recolector_id: int):
         entrega = self.repo.get_entrega_by_id(entrega_id)
         if not entrega:
             raise HTTPException(
@@ -195,6 +195,10 @@ class RecolectorService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="No tiene permiso para ver esta entrega",
             )
+        parcela = None
+        if entrega.parcela_id:
+            parcela = self.parcela_repo.get_by_id(entrega.parcela_id)
+        entrega.parcela = parcela
         return entrega
 
     def get_parcela_de_entrega(self, entrega_id: int):

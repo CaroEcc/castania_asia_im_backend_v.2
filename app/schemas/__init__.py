@@ -404,6 +404,8 @@ class EntregaRecolectorOut(BaseModel):
         from_attributes = True
 
 
+
+
 # =============================================================================
 # SCHEMAS — MÓDULO 1: PARCELAS
 # =============================================================================
@@ -437,6 +439,10 @@ class ParcelaOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class EntregaRecolectorDetailOut(EntregaRecolectorOut):
+    parcela: Optional[ParcelaOut] = None
 
 
 class ParcelaListResponse(BaseModel):

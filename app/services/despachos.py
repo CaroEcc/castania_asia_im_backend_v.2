@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from decimal import Decimal
 
 from fastapi import HTTPException, status
@@ -28,6 +29,11 @@ class DespachoService:
                 detail=f"Despacho {despacho_id} no encontrado",
             )
         return despacho
+
+    @staticmethod
+    def _generar_codigo() -> str:
+        ahora = datetime.utcnow()
+        return f"DSP-{ahora.strftime('%Y%m%d')}-{ahora.strftime('%H%M')}"
 
     def crear(self, body: DespachoCreate, responsable_id) -> Despacho:
         precio_bs_kg = body.precio_bs_kg or Decimal("0")
@@ -66,7 +72,8 @@ class DespachoService:
             total_bs += subtotal_bs
             items_data.append((item_body, lpt, subtotal_bs))
 
-        return self.repo.create(body, responsable_id, items_data, total_kg, total_bs)
+        numero = body.numero_lote_despacho or self._generar_codigo()
+        return self.repo.create(body, responsable_id, items_data, total_kg, total_bs, numero)
 
     def recepcion_destino(self, despacho_id: int, body: RecepcionDestinoBody) -> Despacho:
         despacho = self.repo.get_by_id(despacho_id)

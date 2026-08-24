@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_db, require_role, UserRole
-from app.schemas import EntregaRecolectorCreate, EntregaRecolectorOut, ParcelaOut
+from app.schemas import EntregaRecolectorCreate, EntregaRecolectorOut, EntregaRecolectorDetailOut, ParcelaOut
 from app.services.recolectores import RecolectorService
 
 router = APIRouter(prefix="/entregas-recolector", tags=["Módulo 1 — Entregas recolector"])
@@ -44,7 +44,7 @@ def sincronizar_entrega(
 
 @router.get(
     "/{entrega_id}",
-    response_model=EntregaRecolectorOut,
+    response_model=EntregaRecolectorDetailOut,
     summary="Obtener detalle de una entrega del recolector autenticado",
 )
 def obtener_entrega(

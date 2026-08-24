@@ -29,6 +29,7 @@ class DespachoRepository:
         items_data: list,
         total_kg,
         total_bs,
+        numero_lote_despacho: str,
     ) -> Despacho:
         ep = body.entregado_por
         cond = body.conductor
@@ -38,7 +39,7 @@ class DespachoRepository:
         despacho = Despacho(
             responsable_id=responsable_id,
             fecha_despacho=body.fecha_despacho,
-            numero_lote_despacho=body.numero_lote_despacho,
+            numero_lote_despacho=numero_lote_despacho,
             estado_producto=body.estado_producto,
             propietario_pulpa=body.propietario_pulpa,
             origen_carga=body.origen_carga,
