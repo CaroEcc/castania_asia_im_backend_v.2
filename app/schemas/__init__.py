@@ -1058,6 +1058,22 @@ class TrazabilidadItemRecepcionOut(BaseModel):
     precio_bs_kg: Decimal
     precio_total_bs: Decimal
     fecha_entrega: Optional[date] = None
+    parcela: Optional[ParcelaOut] = None
+
+
+class TrazabilidadItemDespachoOut(BaseModel):
+    id: int
+    despacho_id: int
+    numero_lote: Optional[str]
+    peso_kg: Optional[Decimal]
+    numero_cajas: Optional[int]
+    subtotal_bs: Optional[Decimal]
+    fecha_despacho: Optional[date]
+    numero_lote_despacho: Optional[str] = None
+    destino_carga: Optional[str] = None
+
+    class Config:
+        from_attributes = True
 
 
 class TrazabilidadLoteOut(BaseModel):
@@ -1068,3 +1084,6 @@ class TrazabilidadLoteOut(BaseModel):
     proceso_limpieza: Optional[ProcesoLimpiezaOut] = None
     proceso_ablandamiento: Optional[ProcesoAblandamientoOut] = None
     proceso_elaboracion: Optional[ProcesoElaboracionOut] = None
+    choque_termico: Optional[List[SesionChoqueTermicoOut]] = None
+    camara_frio: Optional[List[InventarioCamaraFrioOut]] = None
+    despachos: Optional[List[TrazabilidadItemDespachoOut]] = None

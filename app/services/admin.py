@@ -11,10 +11,12 @@ from sqlalchemy.orm import Session
 from app.models import (
     Comunidad,
     Despacho,
+    ItemChoqueTermico,
     ItemRecepcion,
     LoteMateriaPrima,
     LoteProductoTerminado,
     Recolector,
+    SesionChoqueTermico,
 )
 
 
@@ -271,6 +273,11 @@ class AdminService:
                     if item.entrega_recolector
                     else None
                 ),
+                "parcela": (
+                    item.entrega_recolector.parcela
+                    if item.entrega_recolector and item.entrega_recolector.parcela_id
+                    else item.parcela
+                ),
             }
             for item in lote.items_recepcion
         ]
@@ -294,6 +301,47 @@ class AdminService:
             "total_recepciones": len(lote.items_recepcion),
         }
 
+        # Choque térmico, cámara fría y despachos — agregados desde los LPTs
+        lpts = []
+        if lote.proceso_elaboracion:
+            lpts = lote.proceso_elaboracion.lotes_producto_terminado
+
+        # Sesiones de choque térmico únicas para los LPTs de este lote
+        lpt_ids = [lpt.id for lpt in lpts]
+        sesiones_choque = []
+        if lpt_ids:
+            items_choque = (
+                self.db.query(ItemChoqueTermico)
+                .filter(ItemChoqueTermico.lote_producto_terminado_id.in_(lpt_ids))
+                .all()
+            )
+            sesion_ids = list({i.sesion_id for i in items_choque})
+            if sesion_ids:
+                sesiones_choque = (
+                    self.db.query(SesionChoqueTermico)
+                    .filter(SesionChoqueTermico.id.in_(sesion_ids))
+                    .all()
+                )
+
+        # Inventarios de cámara fría
+        camara_frio = [item for lpt in lpts for item in lpt.items_inventario]
+
+        # Ítems de despacho enriquecidos con datos del despacho padre
+        items_despacho = []
+        for lpt in lpts:
+            for item in lpt.items_despacho:
+                items_despacho.append({
+                    "id": item.id,
+                    "despacho_id": item.despacho_id,
+                    "numero_lote": item.numero_lote,
+                    "peso_kg": item.peso_kg,
+                    "numero_cajas": item.numero_cajas,
+                    "subtotal_bs": item.subtotal_bs,
+                    "fecha_despacho": item.fecha_despacho,
+                    "numero_lote_despacho": item.despacho.numero_lote_despacho if item.despacho else None,
+                    "destino_carga": item.despacho.destino_carga if item.despacho else None,
+                })
+
         return {
             "lote": lote_out,
             "comunidad_nombre": lote.comunidad.nombre if lote.comunidad else "",
@@ -304,4 +352,7 @@ class AdminService:
             "proceso_limpieza": lote.proceso_limpieza,
             "proceso_ablandamiento": lote.proceso_ablandamiento,
             "proceso_elaboracion": lote.proceso_elaboracion,
+            "choque_termico": sesiones_choque or None,
+            "camara_frio": camara_frio or None,
+            "despachos": items_despacho or None,
         }
